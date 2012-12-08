@@ -1,0 +1,15 @@
+;; Object perspective/
+;; SEMANTICDB Tags save file
+(semanticdb-project-database-file "perspective/"
+  :tables (list 
+   (semanticdb-table "KFrame.java"
+    :major-mode 'jde-mode
+    :tags '(("org.kari.perspective" package nil nil [1 30]) ("java.awt.Dimension" include nil (dependency-file none) [32 58]) ("javax.swing.JComponent" include nil (dependency-file none) [60 90]) ("javax.swing.JFrame" include nil (dependency-file none) [91 117]) ("javax.swing.JPanel" include nil (dependency-file none) [118 144]) ("org.apache.log4j.Logger" include nil (dependency-file none) [146 177]) ("KFrame" type (:typemodifiers ("public") :superclasses "JFrame" :members (("LOG" variable (:typemodifiers ("public" "static" "final") :type "Logger") (reparse-symbol class_member_declaration) [262 324]) ("KFrame" function (:constructor-flag t :typemodifiers ("public")) (reparse-symbol class_member_declaration) [330 574]) ("createContentPanel" function (:typemodifiers ("protected") :type "JComponent") (reparse-symbol class_member_declaration) [580 658])) :type "class") nil [220 660]))
+    :file "KFrame.java"
+    :pointmax 661
+    )
+   )
+  :file "semantic.cache"
+  :semantic-tag-version "2.0pre3"
+  :semanticdb-version "2.0pre3"
+  )

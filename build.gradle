@@ -1,0 +1,38 @@
+apply plugin: 'java'
+apply plugin: 'eclipse'
+
+sourceCompatibility = 1.6
+version = '1.0'
+jar {
+    manifest {
+        attributes 'Implementation-Title': 'KUI', 'Implementation-Version': version
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    List ext_libs = [
+        "log4j:log4j:1.2.17",
+        "net.sf.trove4j:trove4j:3.0.3",
+        "net.java.dev.glazedlists:glazedlists_java15:1.8.0",
+        "tablelayout:TableLayout:20050920",
+    ]
+
+    compile ext_libs
+    testCompile "junit:junit:4.+"
+}
+
+test {
+    systemProperties 'property': 'value'
+}
+
+uploadArchives {
+    repositories {
+       flatDir {
+           dirs 'repos'
+       }
+    }
+}

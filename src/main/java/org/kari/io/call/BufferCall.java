@@ -1,6 +1,5 @@
 package org.kari.io.call;
 
-import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -60,13 +59,8 @@ public final class BufferCall extends ServiceCall {
         throws IOException,
             ClassNotFoundException
     {
-        DirectByteArrayOutputStream buffer = readBuffer(pHandler, pIn);
-
         ObjectInputStream oi = createObjectInput(
-                new ByteArrayInputStream(
-                        buffer.getBuffer(),  
-                        0,  
-                        buffer.size()),
+                readBuffer(pHandler, pIn),
                 false);
         
         read(oi);
@@ -81,7 +75,6 @@ public final class BufferCall extends ServiceCall {
         final boolean compressed = count > BufferCall.COMPRESS_THRESHOLD;
         
         pOut.writeBoolean(compressed);
-        pOut.writeInt(count);
         
         OutputStream out = pOut;
         if (compressed) {
@@ -99,32 +92,20 @@ public final class BufferCall extends ServiceCall {
     /**
      * Read data from pIn to buffer
      */
-    protected static DirectByteArrayOutputStream readBuffer(
+    protected static InputStream readBuffer(
             Handler pHandler,
             DataInputStream pIn) 
         throws IOException 
     {
-        final DirectByteArrayOutputStream buffer = pHandler.getBuffer();
         boolean compressed = pIn.readBoolean();
-        int count = pIn.readInt();
 
-        
         // read data
-        {
-            InputStream in = pIn;
-            if (compressed) {
-                in = new GZIPInputStream(in);
-            }
-
-            byte[] data = pHandler.getDataBuffer();
-            int read = 0;
-            while (read < count) {
-                int n = in.read(data, 0, Math.min(count - read, data.length));
-                buffer.write(data, 0, n);
-                read += n;
-            }
+        InputStream in = pIn;
+        if (compressed) {
+            in = new GZIPInputStream(in);
         }
-        return buffer;
+
+        return in;
     }
 
     @Override

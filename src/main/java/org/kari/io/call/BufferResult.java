@@ -1,6 +1,5 @@
 package org.kari.io.call;
 
-import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -54,13 +53,8 @@ public final class BufferResult extends Result {
             IOException, 
             ClassNotFoundException 
     {
-        DirectByteArrayOutputStream buffer = BufferCall.readBuffer(pHandler, pIn);
-        
         ObjectInputStream oi = createObjectInput(
-                new ByteArrayInputStream(
-                        buffer.getBuffer(),  
-                        0,  
-                        buffer.size()),
+                BufferCall.readBuffer(pHandler, pIn),
                 false);
         
         mResult = oi.readObject();

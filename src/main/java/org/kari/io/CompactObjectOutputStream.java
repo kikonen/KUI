@@ -1,6 +1,11 @@
 package org.kari.io;
 
+import gnu.trove.map.TIntObjectMap;
+import gnu.trove.map.TObjectIntMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
+import gnu.trove.map.hash.TObjectIntHashMap;
+import gnu.trove.procedure.TIntObjectProcedure;
+import gnu.trove.set.hash.THashSet;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
@@ -8,8 +13,12 @@ import java.io.ObjectStreamClass;
 import java.io.OutputStream;
 import java.rmi.dgc.VMID;
 import java.rmi.server.UID;
-
-import ca.odell.glazedlists.impl.adt.gnutrove.TIntArrayList;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Outputstream with more compact format
@@ -21,25 +30,63 @@ public final class CompactObjectOutputStream
 {
     public static final byte TYPE_PLAIN = 0;
     public static final byte TYPE_CLASS_ID = 1;
-    public static final byte TYPE_ARRAY = 'A';
 
     public static final Class ARRAY_CLASS = Object[].class;
-    public static final TIntObjectHashMap<Class> TYPES = new TIntObjectHashMap<Class>();
+    public static final TIntObjectMap<Class> CODE_TO_TYPE = new TIntObjectHashMap<Class>();
+    public static final TObjectIntMap<Class> TYPE_TO_CODE = new TObjectIntHashMap<Class>();
 
-    public static final TIntObjectHashMap<String> PREFIX_VALUES = new TIntObjectHashMap<String>();
-    public static final TIntArrayList PREFIX_IDS = new TIntArrayList();
+    public static final TIntObjectMap<String> PREFIX_VALUES = new TIntObjectHashMap<String>();
+    public static final int[] PREFIX_IDS;
     static {
-        PREFIX_VALUES.put('K', "org.kari.");
-        PREFIX_VALUES.put('R', "java.rmi.");
-        PREFIX_VALUES.put('L', "java.lang.");
-        PREFIX_VALUES.put('J', "java.");
-        PREFIX_IDS.add('K');
-        PREFIX_IDS.add('R');
-        PREFIX_IDS.add('L');
-        PREFIX_IDS.add('J');
+        {
+            char BASE = 'A';
+            PREFIX_VALUES.put(BASE++, "org.kari.");
+            PREFIX_VALUES.put(BASE++, "java.rmi.");
+            PREFIX_VALUES.put(BASE++, "java.lang.");
+            PREFIX_VALUES.put(BASE++, "java.util.");
+            PREFIX_VALUES.put(BASE++, "java.io.");
+            PREFIX_VALUES.put(BASE++, "java.");
+            PREFIX_VALUES.put(BASE++, "org.trove.");
+            PREFIX_VALUES.put(BASE++, "org.google.");
+    
+            PREFIX_IDS = PREFIX_VALUES.keys();
+            Arrays.sort(PREFIX_IDS);
+        }
         
-        TYPES.put(1, UID.class);
-        TYPES.put(2, VMID.class);
+        {
+            char BASE = 'Z';
+            CODE_TO_TYPE.put(BASE++, Throwable.class);
+            CODE_TO_TYPE.put(BASE++, Error.class);
+            CODE_TO_TYPE.put(BASE++, RuntimeException.class);
+            CODE_TO_TYPE.put(BASE++, Exception.class);
+            CODE_TO_TYPE.put(BASE++, UID.class);
+            CODE_TO_TYPE.put(BASE++, VMID.class);
+            CODE_TO_TYPE.put(BASE++, Object.class);
+            CODE_TO_TYPE.put(BASE++, Integer.class);
+            CODE_TO_TYPE.put(BASE++, Number.class);
+            CODE_TO_TYPE.put(BASE++, Long.class);
+            CODE_TO_TYPE.put(BASE++, byte[].class);
+            CODE_TO_TYPE.put(BASE++, int[].class);
+            CODE_TO_TYPE.put(BASE++, long[].class);
+            CODE_TO_TYPE.put(BASE++, Object[].class);
+            CODE_TO_TYPE.put(BASE++, String[].class);
+            CODE_TO_TYPE.put(BASE++, StackTraceElement.class);
+            CODE_TO_TYPE.put(BASE++, StackTraceElement[].class);
+            CODE_TO_TYPE.put(BASE++, List.class);
+            CODE_TO_TYPE.put(BASE++, Set.class);
+            CODE_TO_TYPE.put(BASE++, Map.class);
+            CODE_TO_TYPE.put(BASE++, ArrayList.class);
+            CODE_TO_TYPE.put(BASE++, HashSet.class);
+            CODE_TO_TYPE.put(BASE++, THashSet.class);
+        }
+        
+        CODE_TO_TYPE.forEachEntry(new TIntObjectProcedure<Class>() {
+            @Override
+            public boolean execute(int pCode, Class pType) {
+                TYPE_TO_CODE.put(pType, pCode);
+                return true;
+            }
+        });
     }
 
     public CompactObjectOutputStream()
@@ -59,41 +106,33 @@ public final class CompactObjectOutputStream
     protected void writeClassDescriptor(ObjectStreamClass desc)
         throws IOException
     {
-        final Class<?> descCls = desc.forClass();
+        final Class<?> cls = desc.forClass();
         
-        byte id = TYPE_PLAIN;
-        String name =  desc.getName();
+        String name = null;
         int classId = 0;
-        
-        if (descCls == ARRAY_CLASS) {
-            id = TYPE_ARRAY;
-            name = null;
+        int code = TYPE_TO_CODE.get(cls);
+
+        if (code != 0) {
+            // ok fixed type
         } else {
-            for (int clsId : TYPES.keys()) {
-                Class cls = TYPES.get(clsId);
-                if (descCls == cls) {
-                    id = TYPE_CLASS_ID;
-                    classId = clsId;
+            name = cls.getName();
+            code = TYPE_PLAIN;
+            
+            for (int prefixId : PREFIX_IDS) {
+                String prefix = PREFIX_VALUES.get(prefixId);
+                if (name.startsWith(prefix)) {
+                    code = (byte)prefixId;
+                    name = name.substring(prefix.length());
                     break;
-                }
-            }
-        
-            if (classId == 0) {
-                for (int prefixId : PREFIX_IDS.toNativeArray()) {
-                    String prefix = PREFIX_VALUES.get(prefixId);
-                    if (name.startsWith(prefix)) {
-                        id = (byte)prefixId;
-                        name = name.substring(prefix.length());
-                        break;
-                    }
                 }
             }
         }
         
-        writeByte(id);
+        writeByte( (byte)code );
         if (classId != 0) {
             writeInt(classId);
-        } else if (name != null) {
+        }
+        if (name != null) {
             writeUTF(name);
         }
     }

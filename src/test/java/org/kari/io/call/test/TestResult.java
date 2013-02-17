@@ -1,6 +1,8 @@
 package org.kari.io.call.test;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Result from test API
@@ -8,23 +10,24 @@ import java.io.Serializable;
  * @author kari
  */
 public final class TestResult implements Serializable {
-    private final String mMessage;
+    private final List<String> mMessage;
 
     public TestResult(String pMessage) {
-        mMessage = pMessage;
+        mMessage = new ArrayList<String>();
+        mMessage.add(pMessage);
     }
 
     public TestResult(TestParam pMessage) {
-        mMessage = "via-" + pMessage;
+        this("via-" + pMessage);
     }
 
     public String getMessage() {
-        return mMessage;
+        return mMessage.get(0);
     }
 
     @Override
     public String toString() {
-        return mMessage;
+        return mMessage.get(0);
     }
         
 }

@@ -1,7 +1,5 @@
 package org.kari.io;
 
-import gnu.trove.map.hash.TIntObjectHashMap;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
@@ -34,8 +32,6 @@ public final class CompactObjectInputStream
         }
     }
     
-    private static final TIntObjectHashMap<Class> TYPES = CompactObjectOutputStream.TYPES;
-    private static final TIntObjectHashMap<String> PREFIX_VALUES = CompactObjectOutputStream.PREFIX_VALUES;
     private static final ConcurrentHashMap<TypeKey, Class> CACHED_TYPES = new ConcurrentHashMap<TypeKey, Class>();
 
     private final TypeKey mKey = new TypeKey(0, "");
@@ -60,15 +56,11 @@ public final class CompactObjectInputStream
     {
         final byte id = readByte();
 
-        Class cls;
-        if (id == CompactObjectOutputStream.TYPE_ARRAY) {
-            cls = CompactObjectOutputStream.ARRAY_CLASS;
-        } else if (id == CompactObjectOutputStream.TYPE_CLASS_ID) {
-            int classId = readInt();
-            cls = TYPES.get(classId);
+        Class cls = CompactObjectOutputStream.CODE_TO_TYPE.get(id);
+        if (cls != null) {
+            // ok fixed type
         } else {
             String suffix = readUTF();
-            String prefix = null;
 
             mKey.mCode = id;
             mKey.mName = suffix;
@@ -76,12 +68,7 @@ public final class CompactObjectInputStream
             cls = CACHED_TYPES.get(mKey);
 
             if (cls == null) {
-                for (int prefixId : PREFIX_VALUES.keys()) {
-                    if (id == prefixId) {
-                        prefix = PREFIX_VALUES.get(prefixId);
-                        break;
-                    }
-                }
+                String prefix = CompactObjectOutputStream.PREFIX_VALUES.get(id);
     
                 cls = Class.forName(prefix != null ? prefix + suffix : suffix);
                 CACHED_TYPES.putIfAbsent(new TypeKey(id, suffix), cls);

@@ -1,6 +1,8 @@
 package org.kari.io.call.test;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * param for test API
@@ -8,19 +10,20 @@ import java.io.Serializable;
  * @author kari
  */
 public final class TestParam implements Serializable {
-    private final String mMessage;
+    private final List<String> mMessage;
 
     public TestParam(String pMessage) {
-        mMessage = pMessage;
+        mMessage = new ArrayList<String>();
+        mMessage.add(pMessage);
     }
 
     public String getMessage() {
-        return mMessage;
+        return mMessage.get(0);
     }
     
     @Override
     public String toString() {
-        return mMessage;
+        return mMessage.get(0);
     }
     
 }

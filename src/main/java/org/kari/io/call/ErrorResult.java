@@ -39,7 +39,7 @@ public final class ErrorResult extends Result {
     protected void write(Handler pHandler, DataOutputStream pOut) 
         throws Exception 
     {
-        ObjectOutputStream oo = createObjectOut(pOut);
+        ObjectOutputStream oo = createObjectOut(pOut, true);
         
         oo.writeObject(mError);
         
@@ -51,7 +51,7 @@ public final class ErrorResult extends Result {
         throws IOException,
             ClassNotFoundException 
     {
-        ObjectInputStream oi = createObjectInput(pIn);
+        ObjectInputStream oi = createObjectInput(pIn, true);
         
         mError = (Throwable)oi.readObject();
     }

@@ -8,7 +8,8 @@ public enum CallType {
     STREAM_CALL(1, StreamCall.class),
     STREAM_RESULT(10, StreamResult.class),
     RESULT_NULL(11, NullResult.class),
-    ERROR(12, ErrorResult.class);
+    ERROR(50, ErrorResult.class),
+    ACK_CALL_RECEIVED(100, AckCallReceived.class);
     
     public final byte mCode;
     public final Class<? extends Base> mClass;
@@ -33,7 +34,10 @@ public enum CallType {
     public Base create() throws RemoteException {
         if (this == RESULT_NULL) {
             return NullResult.INSTANCE;
+        }else if (this == ACK_CALL_RECEIVED) {
+            return AckCallReceived.INSTANCE;
         }
+        
         try {
             return mClass.newInstance();
         } catch (Exception e) {

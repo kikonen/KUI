@@ -50,20 +50,32 @@ public final class ClientHandler {
     
     /**
      * Invoke call, retrying call is upto caller
+     * 
+     * @throws RetryCallException if retryable call error occurred
      */
-    public Object invoke(Call pCall) throws Throwable {
+    public Object invoke(Call pCall) 
+        throws 
+            RetryCallException,
+            Throwable 
+    {
         Result result;
 
+        boolean acked = false;
         mCountOut.markCount();
         mCountIn.markCount();
         try {
             pCall.send(mOut);
-            int code = mIn.read();
             
-            CallType type = CallType.resolve(code);
-            result = (Result)type.create();
-            
-            result.receive(mIn);
+            // handle ack
+            Result ack = readResult();
+            if (ack.getType() == CallType.ACK_CALL_RECEIVED) {
+                acked = true;
+                result = readResult();
+            } else {
+                // error if not ack
+                ack.getResult();
+                result = null;
+            }
         } catch (Throwable e) {
             // suicide; failed write/read socket or invalid result type received
             // thus input is already in invalid state
@@ -71,7 +83,11 @@ public final class ClientHandler {
             //    succesfully to server, then server may have actually handled it.
             //    In that case transparent "retry" is not possible
             kill();
-            throw new RemoteException("Failed to access server", e);
+            if (acked) {
+                throw new RemoteException("Failed to access server", e);
+            } else {
+                throw new RetryCallException("Retry call", e);
+            }
         } finally {
             if (false) {
                 LOG.info("out=" + mCountOut.getMarkSize() + ", in=" + mCountIn.getMarkSize());
@@ -80,5 +96,20 @@ public final class ClientHandler {
         
         return result.getResult();
     }
-    
+
+    /**
+     * Read single result from server
+     */
+    private Result readResult() 
+        throws IOException,
+            RemoteException, 
+            Exception 
+    {
+        int code = mIn.read();
+        CallType type = CallType.resolve(code);
+        Result result = (Result)type.create();
+        result.receive(mIn);
+        return result;
+    }
 }
+

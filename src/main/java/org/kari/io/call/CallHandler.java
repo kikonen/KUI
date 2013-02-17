@@ -11,6 +11,8 @@ import java.util.IdentityHashMap;
  * @author kari
  */
 public final class CallHandler implements InvocationHandler {
+    private static final int RETRY_COUNT = 2;
+    
     private final Class<? extends Remote> mService;
     private final CallClient mClient;
     private final CallSessionProvider mSessionProvider;
@@ -46,23 +48,50 @@ public final class CallHandler implements InvocationHandler {
     public Object invoke(Object pProxy, Method pMethod, Object[] pArgs)
         throws Throwable 
     {
-        ClientHandler handler = mClient.reserve();
-        try {
-            Object sessionId = mSessionProvider.getSessionId();
-            boolean sessionIdChanged = sessionId != mLastSessionId;
-            mLastSessionId = sessionId;
-            
-            Call call = new StreamCall(
-                    sessionId,
-                    sessionIdChanged,
-                    mServiceUUID, 
-                    getMethodId(mServiceUUID, pMethod), 
-                    pArgs);
-            
-            return handler.invoke(call);
-        } finally {
-            mClient.release(handler);
+        Object result = null;
+        String methodName = pMethod.getName();
+        
+        if ("toString".equals(methodName)) {
+            return mService.toString();
         }
+        if ("hashCode".equals(methodName)) {
+            return 0;
+        }
+        if ("equals".equals(methodName)) {
+            return false;
+        }
+
+        int retryCount = 0;
+        while (retryCount < RETRY_COUNT) {
+            retryCount++;
+            ClientHandler handler = mClient.reserve();
+            try {
+                Object sessionId = mSessionProvider.getSessionId();
+                boolean sessionIdChanged = sessionId != mLastSessionId;
+                mLastSessionId = sessionId;
+                
+                Call call = new StreamCall(
+                        sessionId,
+                        sessionIdChanged,
+                        mServiceUUID, 
+                        getMethodId(mServiceUUID, pMethod), 
+                        pArgs);
+                
+                result = handler.invoke(call);
+            } catch (RetryCallException e) {
+                // retry
+                if (retryCount >= RETRY_COUNT) {
+                    throw e;
+                }
+                
+                // small delay before retry
+                Thread.sleep(100);
+            } finally {
+                mClient.release(handler);
+            }
+        }
+        
+        return result;
     }
     
     

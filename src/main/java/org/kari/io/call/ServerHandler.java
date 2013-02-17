@@ -102,21 +102,38 @@ public final class ServerHandler extends Thread {
         }
         
         if (call != null) {
+            boolean received = false;
+            boolean acked = false;
             try {
                 call.receive(mIn);
                 mLastSessionId = call.getSessionId();
+                received = true;
             } catch (Throwable e) {
                 result = new ErrorResult(e);
                 // socket has failed or major internal error
                 // => Attempt to send error to client and die
                 suicide = true;
             }
-        
-            try {
-                result = call.invoke(mServer.getRegistry());
-            } catch (Throwable e) {
-                result = new ErrorResult(e);
-                // normal call failure
+
+            if (received) {
+                try {
+                    AckCallReceived.INSTANCE.send(mOut);
+                    acked = true;
+                } catch (Throwable e) {
+                    result = new ErrorResult(e);
+                    // Socket may be unstable; restart
+                    suicide = true;
+                }
+            }
+            
+            if (acked) {
+                try {
+                    // execute after sending ack
+                    result = call.invoke(mServer.getRegistry());
+                } catch (Throwable e) {
+                    result = new ErrorResult(e);
+                    // normal call failure
+                }
             }
         }
         
@@ -128,7 +145,7 @@ public final class ServerHandler extends Thread {
         } finally {
             // kill server hand let client reconnect
             if (suicide) {
-                kill();
+                mRunning = false;
             }
         }
     }

@@ -18,7 +18,7 @@ import org.kari.io.DirectByteArrayOutputStream;
  * @author kari
  */
 public final class BufferCall extends ServiceCall {
-    public static final int COMPRESS_THRESHOLD = 100;
+    public static final int COMPRESS_THRESHOLD = 512;
     
     /**
      * For decoding call

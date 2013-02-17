@@ -46,4 +46,10 @@ public class TestServiceImpl implements TestService {
         throw new TestException("err-" + pParam);
     }
 
+    @Override
+    public byte[] testBigCall(byte[] pData) throws RemoteException {
+        LOG.info("big: " + pData.length);
+        return pData;
+    }
+    
 }

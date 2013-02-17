@@ -105,7 +105,19 @@ public final class TestClient {
         } catch (Exception e) {
             LOG.error("Failed", e);
         }
-    
+
+        LOG.info("TEST " + (idx++) + " - bigCall");
+        try {
+            byte[] in = new byte[100000];
+            for (int i = 0; i < in.length; i++) {
+                in[i] = (byte)i;
+            }
+            byte[] out = service.testBigCall(in);
+            LOG.info("response: " + out.length);    
+        } catch (Exception e) {
+            LOG.error("Failed", e);
+        }
+
         LOG.info("TEST " + (idx++) + " - testError");
         try {
             TestResult result = service.testError(new TestParam("hello"));

@@ -1,51 +1,21 @@
 package org.kari.io.call;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.rmi.RemoteException;
 
 import org.apache.log4j.Logger;
-import org.kari.io.CountInputStream;
-import org.kari.io.CountOutputStream;
 
 /**
  * Handles communication with one socket in client side
  *
  * @author kari
  */
-public final class ClientHandler {
+public final class ClientHandler extends Handler {
     private static final Logger LOG = Logger.getLogger(CallConstants.BASE_PKG + ".client_handler");
     
-    private final Socket mSocket;
-    
-    private final CountOutputStream mCountOut;
-    private final CountInputStream mCountIn;
-    
-    private final DataInputStream mIn;
-    private final DataOutputStream mOut;
-    
-    private volatile boolean mRunning = true;
-    
-    
     public ClientHandler(Socket pSocket) throws IOException {
-        mSocket = pSocket;
-        mCountOut = new CountOutputStream(mSocket.getOutputStream());
-        mCountIn = new CountInputStream(mSocket.getInputStream());
-        mIn = new DataInputStream(new BufferedInputStream(mCountIn));
-        mOut = new DataOutputStream(new BufferedOutputStream(mCountOut));
-    }
-    
-    public void kill() {
-        mRunning = false;
-        CallUtil.closeSocket(mSocket);
-    }
-    
-    public boolean isAlive() {
-        return mRunning && !mSocket.isClosed();
+        super(pSocket);
     }
     
     /**
@@ -64,7 +34,8 @@ public final class ClientHandler {
         mCountOut.markCount();
         mCountIn.markCount();
         try {
-            pCall.send(mOut);
+            resetBuffer();
+            pCall.send(this, mOut);
             
             // handle ack
             Result ack = readResult();
@@ -108,7 +79,7 @@ public final class ClientHandler {
         int code = mIn.read();
         CallType type = CallType.resolve(code);
         Result result = (Result)type.create();
-        result.receive(mIn);
+        result.receive(this, mIn);
         return result;
     }
 }

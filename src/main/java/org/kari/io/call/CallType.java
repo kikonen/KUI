@@ -7,7 +7,11 @@ public enum CallType {
     UNKNOWN(0, null),
     STREAM_CALL(1, StreamCall.class),
     STREAM_RESULT(10, StreamResult.class),
-    RESULT_NULL(11, NullResult.class),
+    
+    BUFFER_CALL(20, BufferCall.class),
+    BUFFER_RESULT(21, BufferResult.class),
+
+    RESULT_NULL(30, NullResult.class),
     ERROR(50, ErrorResult.class),
     ACK_CALL_RECEIVED(100, AckCallReceived.class);
     

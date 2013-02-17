@@ -11,7 +11,7 @@ public abstract class Result extends Base {
     public static final Logger LOG = Logger.getLogger(CallConstants.BASE_PKG + ".result");
     
     
-    public Result(CallType pType) {
+    protected Result(CallType pType) {
         super(pType);
     }
     

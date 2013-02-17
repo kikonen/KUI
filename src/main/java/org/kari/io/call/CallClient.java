@@ -23,7 +23,6 @@ public final class CallClient {
     private final ServiceRegistry mRegistry;
     
     private final List<ClientHandler> mPool = new ArrayList<ClientHandler>();
-
     
     public CallClient(
             String pServerAddress, 
@@ -60,7 +59,7 @@ public final class CallClient {
         
         while (handler == null && !mPool.isEmpty()) {
             handler = mPool.remove(mPool.size() - 1);
-            if (!handler.isAlive()) {
+            if (!handler.isRunning()) {
                 handler = null;
             }
         }
@@ -81,7 +80,7 @@ public final class CallClient {
      * Get available handler from pool of handlers or create new handler
      */
     public synchronized void release(ClientHandler pHandler) {
-        if (pHandler.isAlive()) {
+        if (pHandler.isRunning()) {
             mPool.add(pHandler);
         } else {
             // ensure socket is properly closed

@@ -1,59 +1,64 @@
 package org.kari.io.call;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 
 import org.apache.log4j.Logger;
-import org.kari.io.CountInputStream;
-import org.kari.io.CountOutputStream;
 
 /**
  * Handles all incoming in one socket
  *
  * @author kari
  */
-public final class ServerHandler extends Thread {
+public final class ServerHandler extends Handler 
+    implements
+        Runnable
+{
     private static final Logger LOG = Logger.getLogger(CallConstants.BASE_PKG + ".server_handler");
     
     private final CallServer mServer;
     
-    private final Socket mSocket;
-
-    private final CountOutputStream mCountOut;
-    private final CountInputStream mCountIn;
-
-    private final DataInputStream mIn;
-    private final DataOutputStream mOut;
-    
-    private volatile boolean mRunning = true;
-
+    private Thread mThread;
     private Object mLastSessionId;
+
     
     public ServerHandler(CallServer pServer, Socket pSocket) throws IOException {
-        super("ServerHandler-" + pSocket);
-        setDaemon(true);
+        super(pSocket);
     
         mServer = pServer;
-        mSocket = pSocket;
-        mCountOut = new CountOutputStream(mSocket.getOutputStream());
-        mCountIn = new CountInputStream(mSocket.getInputStream());
-        mIn = new DataInputStream(new BufferedInputStream(mCountIn));
-        mOut = new DataOutputStream(new BufferedOutputStream(mCountOut));
-    }
-    
-    public void kill() {
-        mRunning = false;
-        CallUtil.closeSocket(mSocket);
     }
 
-    public boolean isRunning() {
-        return mRunning && mServer.isRunning();
+    /**
+     * Start handler thread
+     */
+    public void start() {
+        if (isRunning()) {
+            synchronized (this) {
+                mThread = new Thread(this, "ServerHandler-" + mSocket);
+                mThread.setDaemon(true);
+                mThread.start();
+            }
+        }
     }
     
+    @Override
+    public void kill() {
+        super.kill();
+        
+        synchronized (this) {
+            Thread thread = mThread;
+            mThread = null;
+            if (thread != null) {
+                thread.interrupt();
+            }
+        }
+    }
+
+    @Override
+    public boolean isRunning() {
+        return super.isRunning() && mServer.isRunning();
+    }
+
     @Override
     public void run() {
         boolean waiting = true;
@@ -105,7 +110,8 @@ public final class ServerHandler extends Thread {
             boolean received = false;
             boolean acked = false;
             try {
-                call.receive(mIn);
+                resetBuffer();
+                call.receive(this, mIn);
                 mLastSessionId = call.getSessionId();
                 received = true;
             } catch (Throwable e) {
@@ -117,7 +123,7 @@ public final class ServerHandler extends Thread {
 
             if (received) {
                 try {
-                    AckCallReceived.INSTANCE.send(mOut);
+                    AckCallReceived.INSTANCE.send(this, mOut);
                     acked = true;
                 } catch (Throwable e) {
                     result = new ErrorResult(e);
@@ -138,14 +144,21 @@ public final class ServerHandler extends Thread {
         }
         
         try {
-            result.send(mOut);
+            result.send(this, mOut);
         } catch (Exception e) {
             LOG.error("Failed to send result", e);
             result.traceDebug();
         } finally {
             // kill server hand let client reconnect
             if (suicide) {
+                // soft server kindly; after next iteration in while to allow
+                // client some time to receive results
                 mRunning = false;
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    // ignore; dying anyway
+                }
             }
         }
     }

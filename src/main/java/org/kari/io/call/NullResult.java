@@ -22,12 +22,12 @@ public final class NullResult extends Result {
     }
     
     @Override
-    protected void write(DataOutputStream pOut) {
+    protected void write(Handler pHandler, DataOutputStream pOut) {
         // nothing
     }
     
     @Override
-    protected void read(DataInputStream pIn) {
+    protected void read(Handler pHandler, DataInputStream pIn) {
         // nothing
     }
 

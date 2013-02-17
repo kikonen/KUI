@@ -5,27 +5,18 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.rmi.Remote;
 
 /**
  * Remote call
  *
  * @author kari
  */
-public final class StreamCall extends Call {
-    
-    private boolean mSessionIdChanged;
-    private int mServiceUUID;
-    private long mMethodId;
-    private Object[] mParams;
-    
+public final class StreamCall extends ServiceCall {
     /**
-     * For server side handling
+     * For decoding call
      */
     public StreamCall() {
-        super(CallType.STREAM_CALL, null);
+        super(CallType.STREAM_CALL);
     }
     
     /**
@@ -40,77 +31,29 @@ public final class StreamCall extends Call {
             long pMethodId,
             Object[] pParams) 
     {
-        super(CallType.STREAM_CALL, pSessionId);
-    
-        mSessionIdChanged = pSessionIdChanged;
-        mServiceUUID = pServiceUUID;
-        mMethodId = pMethodId;
-        mParams = pParams;
+        super(CallType.STREAM_CALL, pSessionId, pSessionIdChanged, pServiceUUID, pMethodId, pParams);
     }
     
     @Override
-    protected void write(DataOutputStream pOut) 
+    protected void write(Handler pHandler, DataOutputStream pOut) 
         throws Exception
     {
-        pOut.writeInt(mServiceUUID);
-        pOut.writeLong(mMethodId);
-        pOut.write(mParams != null ? mParams.length : 0);
-    
         ObjectOutputStream oo = createObjectOut(pOut);
-
-        oo.writeBoolean(mSessionIdChanged);
-        if (mSessionIdChanged) {
-            oo.writeObject(mSessionId);
-        }
-        
-        // parameters
-        if (mParams != null) {
-            for (int i = 0; i < mParams.length; i++) {
-                oo.writeObject(mParams[i]);
-            }
-        }
-        
+        write(oo);
         oo.flush();
     }
 
     @Override
-    protected void read(DataInputStream pIn) 
+    protected void read(Handler pHandler, DataInputStream pIn) 
         throws IOException,
             ClassNotFoundException
     {
-        mServiceUUID = pIn.readInt();
-        mMethodId = pIn.readLong();
-        int count = pIn.read();
-    
         ObjectInputStream oi = createObjectInput(pIn);
-
-        mSessionIdChanged = oi.readBoolean();
-        if (mSessionIdChanged) {
-            mSessionId = oi.readObject();
-        }
-        
-        if (count > 0) {
-            mParams = new Object[count];
-            for (int i = 0; i < count; i++) {
-                mParams[i] = oi.readObject();
-            }
-        }
+        read(oi);
     }
-
+    
     @Override
-    public Result invoke(ServiceRegistry pRegistry) 
-        throws Throwable
-    {
-        final Remote service = pRegistry.getService(mServiceUUID);
-        final Method method = pRegistry.getMethod(mServiceUUID, mMethodId);
-        
-        try {
-            Object result = method.invoke(service, mParams);
-            return result != null 
-                ? new StreamResult(result) 
-                : NullResult.INSTANCE;
-        } catch (InvocationTargetException e) {
-            throw e.getTargetException();
-        }
+    protected Result createResult(Object pResult) {
+        return new StreamResult(pResult);
     }
 }

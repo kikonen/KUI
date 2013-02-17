@@ -35,7 +35,7 @@ public final class StreamResult extends Result {
     }
     
     @Override
-    protected void write(DataOutputStream pOut) 
+    protected void write(Handler pHandler, DataOutputStream pOut) 
         throws Exception 
     {
         ObjectOutputStream oo = createObjectOut(pOut);
@@ -46,7 +46,7 @@ public final class StreamResult extends Result {
     }
     
     @Override
-    protected void read(DataInputStream pIn) 
+    protected void read(Handler pHandler, DataInputStream pIn) 
         throws IOException,
             ClassNotFoundException 
     {

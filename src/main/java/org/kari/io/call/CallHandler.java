@@ -70,7 +70,7 @@ public final class CallHandler implements InvocationHandler {
                 boolean sessionIdChanged = sessionId != mLastSessionId;
                 mLastSessionId = sessionId;
                 
-                Call call = new StreamCall(
+                Call call = new BufferCall(
                         sessionId,
                         sessionIdChanged,
                         mServiceUUID, 
@@ -78,6 +78,7 @@ public final class CallHandler implements InvocationHandler {
                         pArgs);
                 
                 result = handler.invoke(call);
+                retryCount = RETRY_COUNT;
             } catch (RetryCallException e) {
                 // retry
                 if (retryCount >= RETRY_COUNT) {

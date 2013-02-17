@@ -11,12 +11,14 @@ public abstract class Call extends Base {
     public static final Logger LOG = Logger.getLogger(CallConstants.BASE_PKG + ".call");
 
     protected Object mSessionId;
+    protected boolean mSessionIdChanged;
 
     
-    public Call(CallType pType, Object pSessionId) {
+    protected Call(CallType pType, Object pSessionId, boolean pSessionIdChanged) {
         super(pType);
         
         mSessionId = pSessionId;
+        mSessionIdChanged = pSessionIdChanged;
     }
     
     public final Object getSessionId() {

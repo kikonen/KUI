@@ -32,4 +32,9 @@ public interface TestService extends Remote {
         throws
             RemoteException,
             TestException;
+    
+    byte[] testBigCall(byte[] pData)
+        throws
+            RemoteException;
+
 }

@@ -9,7 +9,7 @@ import java.io.DataOutputStream;
  * @author kari
  */
 public abstract class AckResult extends Result {
-    public AckResult(CallType pAck) {
+    protected AckResult(CallType pAck) {
         super(pAck);
     }
     
@@ -19,12 +19,12 @@ public abstract class AckResult extends Result {
     }
     
     @Override
-    protected final void write(DataOutputStream pOut) {
+    protected final void write(Handler pHandler, DataOutputStream pOut) {
         // nothing
     }
     
     @Override
-    protected final void read(DataInputStream pIn) {
+    protected final void read(Handler pHandler, DataInputStream pIn) {
         // nothing
     }
 

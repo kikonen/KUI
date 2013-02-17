@@ -50,6 +50,13 @@ public final class CallServer extends Thread {
         closeServerSocket();
     }
 
+    /**
+     * @return true if server is not terminated
+     */
+    public boolean isRunning() {
+        return mRunning;
+    }
+
     @Override
     public void run() {
         try {

@@ -49,12 +49,16 @@ public final class ServerHandler extends Thread {
         mRunning = false;
         CallUtil.closeSocket(mSocket);
     }
+
+    public boolean isRunning() {
+        return mRunning && mServer.isRunning();
+    }
     
     @Override
     public void run() {
         boolean waiting = true;
         try {
-            while (mRunning) {
+            while (isRunning()) {
                 mCountOut.markCount();
                 mCountIn.markCount();
                 try {
@@ -62,10 +66,13 @@ public final class ServerHandler extends Thread {
                     int code = mIn.read();
                     waiting = false;
                     
-                    CallType type = CallType.resolve(code);
-                    handle(type);
+                    // handle call only if server is still running
+                    if (isRunning()) {
+                        CallType type = CallType.resolve(code);
+                        handle(type);
+                    }
                 } finally {
-                    if (false) {
+                    if (true) {
                         LOG.info("out=" + mCountOut.getMarkSize() + ", in=" + mCountIn.getMarkSize());
                     }
                 }
@@ -78,7 +85,7 @@ public final class ServerHandler extends Thread {
             kill();
         }
     }
-    
+
     private void handle(CallType pType) {
         boolean suicide = false;
         Result result = null;

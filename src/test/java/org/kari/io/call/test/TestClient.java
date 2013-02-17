@@ -65,7 +65,15 @@ public final class TestClient {
         } catch (Exception e) {
             LOG.error("Failed", e);
         }
-        
+
+        LOG.info("TEST " + (idx++) + " - testSimple-cachedSessionId");
+        try {
+            TestResult result = service.testSimple(new TestParam("hello"));
+            LOG.info("response: " + result);    
+        } catch (Exception e) {
+            LOG.error("Failed", e);
+        }
+
         LOG.info("TEST " + (idx++) + " - testVoidParam");
         try {
             TestResult result = service.testVoidParam();

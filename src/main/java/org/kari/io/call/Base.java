@@ -23,7 +23,7 @@ public abstract class Base {
     /**
      * Compression is preferred in out/in
      */
-    public static final boolean COMPRESS = true;
+    public static final boolean COMPRESS = false;
     /**
      * "no desc" out/in object streams preferred
      */

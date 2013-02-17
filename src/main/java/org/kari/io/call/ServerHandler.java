@@ -30,7 +30,8 @@ public final class ServerHandler extends Thread {
     private final DataOutputStream mOut;
     
     private volatile boolean mRunning = true;
-    
+
+    private Object mLastSessionId;
     
     public ServerHandler(CallServer pServer, Socket pSocket) throws IOException {
         super("ServerHandler-" + pSocket);
@@ -84,6 +85,7 @@ public final class ServerHandler extends Thread {
         Call call = null;
         try {
             call = (Call)pType.create();
+            call.setSessionId(mLastSessionId);
         } catch (Throwable e) {
             result = new ErrorResult(e);
             // cleanup by enforcing socket re-create; state unrecoversable
@@ -95,6 +97,7 @@ public final class ServerHandler extends Thread {
         if (call != null) {
             try {
                 call.receive(mIn);
+                mLastSessionId = call.getSessionId();
             } catch (Throwable e) {
                 result = new ErrorResult(e);
                 // socket has failed or major internal error

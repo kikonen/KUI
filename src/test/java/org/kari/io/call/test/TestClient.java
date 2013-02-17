@@ -39,9 +39,11 @@ public final class TestClient {
     };
     
     private final CallSessionProvider mSessionProvider = new CallSessionProvider() {
+        private final TestTicket mTicket = new TestTicket();
+        
         @Override
         public Object getSessionId() {
-            return new TestTicket();
+            return mTicket;
         }
     };
     

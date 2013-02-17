@@ -16,7 +16,7 @@ import java.rmi.Remote;
  */
 public final class StreamCall extends Call {
     
-    private Object mSessionId;
+    private boolean mSessionIdChanged;
     private int mServiceUUID;
     private long mMethodId;
     private Object[] mParams;
@@ -25,7 +25,7 @@ public final class StreamCall extends Call {
      * For server side handling
      */
     public StreamCall() {
-        super(CallType.STREAM_CALL);
+        super(CallType.STREAM_CALL, null);
     }
     
     /**
@@ -35,13 +35,14 @@ public final class StreamCall extends Call {
      */
     public StreamCall(
             Object pSessionId,
+            boolean pSessionIdChanged,
             int pServiceUUID, 
             long pMethodId,
             Object[] pParams) 
     {
-        super(CallType.STREAM_CALL);
+        super(CallType.STREAM_CALL, pSessionId);
     
-        mSessionId = pSessionId;
+        mSessionIdChanged = pSessionIdChanged;
         mServiceUUID = pServiceUUID;
         mMethodId = pMethodId;
         mParams = pParams;
@@ -57,7 +58,10 @@ public final class StreamCall extends Call {
     
         ObjectOutputStream oo = createObjectOut(pOut);
 
-        oo.writeObject(mSessionId);
+        oo.writeBoolean(mSessionIdChanged);
+        if (mSessionIdChanged) {
+            oo.writeObject(mSessionId);
+        }
         
         // parameters
         if (mParams != null) {
@@ -80,7 +84,10 @@ public final class StreamCall extends Call {
     
         ObjectInputStream oi = createObjectInput(pIn);
 
-        mSessionId = oi.readObject();
+        mSessionIdChanged = oi.readBoolean();
+        if (mSessionIdChanged) {
+            mSessionId = oi.readObject();
+        }
         
         if (count > 0) {
             mParams = new Object[count];

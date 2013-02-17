@@ -24,6 +24,8 @@ public final class CallHandler implements InvocationHandler {
     private final IdentityHashMap<Method, Long> mMethodIds = 
             new IdentityHashMap<Method, Long>();
     
+    private Object mLastSessionId;
+    
     
     public CallHandler(
             Class<? extends Remote> pService,
@@ -46,8 +48,13 @@ public final class CallHandler implements InvocationHandler {
     {
         ClientHandler handler = mClient.reserve();
         try {
+            Object sessionId = mSessionProvider.getSessionId();
+            boolean sessionIdChanged = sessionId != mLastSessionId;
+            mLastSessionId = sessionId;
+            
             Call call = new StreamCall(
-                    mSessionProvider.getSessionId(), 
+                    sessionId,
+                    sessionIdChanged,
                     mServiceUUID, 
                     getMethodId(mServiceUUID, pMethod), 
                     pArgs);

@@ -12,8 +12,6 @@ import java.io.ObjectOutputStream;
  * @author kari
  */
 public final class ErrorResult extends Result {
-    public static final boolean COMPRESS = StreamCall.COMPRESS;
-    
     private Throwable mError;
     
     /**

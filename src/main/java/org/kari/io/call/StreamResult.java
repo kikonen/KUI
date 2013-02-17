@@ -12,9 +12,6 @@ import java.io.ObjectOutputStream;
  * @author kari
  */
 public final class StreamResult extends Result {
-    public static final boolean COMPRESS = StreamCall.COMPRESS;
-    
-    
     private Object mResult;
     
     /**

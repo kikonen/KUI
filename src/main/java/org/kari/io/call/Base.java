@@ -44,7 +44,7 @@ public abstract class Base {
      * @see #NO_DESC
      */
     public static ObjectOutputStream createObjectOut(OutputStream pOut)
-            throws IOException 
+        throws IOException 
     {
         return createObjectOut(pOut, COMPRESS);
     }

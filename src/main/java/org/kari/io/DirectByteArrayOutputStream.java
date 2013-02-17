@@ -18,6 +18,13 @@ public final class DirectByteArrayOutputStream
         super(size);
     }
 
+    /**
+     * Direct reference to buffer. Allows optimal non-copy access to data
+     * and reusing buffer (with reset())
+     * 
+     * @see #size()
+     * @see #reset()
+     */
     public byte[] getBuffer() {
         return buf;
     }

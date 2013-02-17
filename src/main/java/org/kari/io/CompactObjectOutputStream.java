@@ -102,6 +102,14 @@ public final class CompactObjectOutputStream
         super(pOut);
     }
 
+    /**
+     * No magic header
+     */
+    @Override
+    protected void writeStreamHeader() throws IOException {
+        // nothing
+    }
+
     @Override
     protected void writeClassDescriptor(ObjectStreamClass desc)
         throws IOException

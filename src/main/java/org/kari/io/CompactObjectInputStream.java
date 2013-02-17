@@ -49,6 +49,14 @@ public final class CompactObjectInputStream
         super(pIn);
     }
 
+    /**
+     * No magic header
+     */
+    @Override
+    protected void readStreamHeader() throws IOException {
+        // nothing
+    }
+
     @Override
     protected ObjectStreamClass readClassDescriptor()
         throws IOException,

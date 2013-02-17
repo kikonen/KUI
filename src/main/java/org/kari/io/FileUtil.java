@@ -1,4 +1,4 @@
-package org.kari.util;
+package org.kari.io;
 
 import java.io.Closeable;
 import java.io.DataInputStream;
@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
+import org.kari.util.TextUtil;
 
 /**
  * Utilities for file handling

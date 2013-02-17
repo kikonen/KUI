@@ -1,4 +1,4 @@
-package org.kari.util;
+package org.kari.io;
 
 import gnu.trove.map.hash.TIntObjectHashMap;
 
@@ -16,14 +16,15 @@ import ca.odell.glazedlists.impl.adt.gnutrove.TIntArrayList;
  * 
  * @author kari
  */
-public class CompactObjectOutputStream
+public final class CompactObjectOutputStream
     extends ObjectOutputStream
 {
     public static final byte TYPE_PLAIN = 0;
     public static final byte TYPE_CLASS_ID = 1;
     public static final byte TYPE_ARRAY = 'A';
 
-    public static final TIntObjectHashMap<String> TYPES = new TIntObjectHashMap<String>();
+    public static final Class ARRAY_CLASS = Object[].class;
+    public static final TIntObjectHashMap<Class> TYPES = new TIntObjectHashMap<Class>();
 
     public static final TIntObjectHashMap<String> PREFIX_VALUES = new TIntObjectHashMap<String>();
     public static final TIntArrayList PREFIX_IDS = new TIntArrayList();
@@ -37,8 +38,8 @@ public class CompactObjectOutputStream
         PREFIX_IDS.add('L');
         PREFIX_IDS.add('J');
         
-        TYPES.put(1, UID.class.getName());
-        TYPES.put(2, VMID.class.getName());
+        TYPES.put(1, UID.class);
+        TYPES.put(2, VMID.class);
     }
 
     public CompactObjectOutputStream()
@@ -58,17 +59,19 @@ public class CompactObjectOutputStream
     protected void writeClassDescriptor(ObjectStreamClass desc)
         throws IOException
     {
+        final Class<?> descCls = desc.forClass();
+        
         byte id = TYPE_PLAIN;
         String name =  desc.getName();
         int classId = 0;
         
-        if (name.equals("[Ljava.lang.Object;")) {
+        if (descCls == ARRAY_CLASS) {
             id = TYPE_ARRAY;
             name = null;
         } else {
             for (int clsId : TYPES.keys()) {
-                String className = TYPES.get(clsId);
-                if (className.equals(name)) {
+                Class cls = TYPES.get(clsId);
+                if (descCls == cls) {
                     id = TYPE_CLASS_ID;
                     classId = clsId;
                     break;

@@ -1,4 +1,4 @@
-package org.kari.util;
+package org.kari.io;
 
 import java.io.ByteArrayOutputStream;
 

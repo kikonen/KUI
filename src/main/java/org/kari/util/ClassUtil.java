@@ -11,7 +11,9 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
-import org.kari.log.LogUtil;
+import org.kari.io.CompactObjectInputStream;
+import org.kari.io.CompactObjectOutputStream;
+import org.kari.util.log.LogUtil;
 
 
 public final class ClassUtil {

@@ -6,9 +6,9 @@ import javax.swing.UIManager;
 
 import org.apache.log4j.Logger;
 import org.kari.action.ActionResources;
-import org.kari.log.LogUtil;
 import org.kari.resources.ResourceAdapter;
 import org.kari.util.SystemUtil;
+import org.kari.util.log.LogUtil;
 
 /**
  * Utility for starting application
@@ -29,6 +29,7 @@ public class AppUtil {
         ResourceAdapter.getInstance().addBundle(ActionResources.class);
 
         SwingUtilities.invokeLater(new Runnable() {
+            @Override
             public void run() {
                 try {
                     Object app = pType.newInstance();

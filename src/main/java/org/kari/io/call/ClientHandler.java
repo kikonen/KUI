@@ -73,7 +73,9 @@ public final class ClientHandler {
             kill();
             throw new RemoteException("Failed to access server", e);
         } finally {
-            LOG.info("out=" + mCountOut.getMarkSize() + ", in=" + mCountIn.getMarkSize());
+            if (false) {
+                LOG.info("out=" + mCountOut.getMarkSize() + ", in=" + mCountIn.getMarkSize());
+            }
         }
         
         return result.getResult();

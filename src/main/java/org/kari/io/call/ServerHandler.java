@@ -64,7 +64,9 @@ public final class ServerHandler extends Thread {
                     CallType type = CallType.resolve(code);
                     handle(type);
                 } finally {
-                    LOG.info("out=" + mCountOut.getMarkSize() + ", in=" + mCountIn.getMarkSize());
+                    if (false) {
+                        LOG.info("out=" + mCountOut.getMarkSize() + ", in=" + mCountIn.getMarkSize());
+                    }
                 }
             }
         } catch (Exception e) {

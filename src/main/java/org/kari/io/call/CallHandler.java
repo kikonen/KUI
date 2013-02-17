@@ -1,8 +1,5 @@
 package org.kari.io.call;
 
-import gnu.trove.map.TIntObjectMap;
-import gnu.trove.map.hash.TIntObjectHashMap;
-
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.rmi.Remote;
@@ -24,8 +21,8 @@ public final class CallHandler implements InvocationHandler {
      * <p>NOTE KI methodIds can be cached only within this handler; identitymap
      * won't hold across different proxy instances
      */
-    private final TIntObjectMap<IdentityHashMap<Method, Long>> mMethodIds = 
-            new TIntObjectHashMap<IdentityHashMap<Method, Long>>();
+    private final IdentityHashMap<Method, Long> mMethodIds = 
+            new IdentityHashMap<Method, Long>();
     
     
     public CallHandler(
@@ -66,16 +63,10 @@ public final class CallHandler implements InvocationHandler {
      * Get/Create methodId in client side
      */
     private synchronized long getMethodId(int pServiceUUID, Method pMethod) {
-        Long id = null;
-        IdentityHashMap<Method, Long> methodIds = mMethodIds.get(pServiceUUID);
-        if (methodIds ==null) {
-            methodIds = new IdentityHashMap<Method, Long>();
-            mMethodIds.put(pServiceUUID, methodIds);
-        }
-        id = methodIds.get(pMethod);
+        Long id = mMethodIds.get(pMethod);
         if (id == null) {
             id = CallUtil.getMethodId(pMethod);
-            methodIds.put(pMethod,  new Long(id));
+            mMethodIds.put(pMethod,  new Long(id));
         }
         
         return id != null ? id.longValue() : 0;

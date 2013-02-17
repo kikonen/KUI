@@ -70,12 +70,22 @@ public final class CallHandler implements InvocationHandler {
                 boolean sessionIdChanged = sessionId != mLastSessionId;
                 mLastSessionId = sessionId;
                 
-                Call call = new BufferCall(
-                        sessionId,
-                        sessionIdChanged,
-                        mServiceUUID, 
-                        getMethodId(mServiceUUID, pMethod), 
-                        pArgs);
+                Call call;
+                if (Base.BUFFER_CALL) {
+                    call = new BufferCall(
+                            sessionId,
+                            sessionIdChanged,
+                            mServiceUUID, 
+                            getMethodId(mServiceUUID, pMethod), 
+                            pArgs);
+                } else {
+                    call = new StreamCall(
+                            sessionId,
+                            sessionIdChanged,
+                            mServiceUUID, 
+                            getMethodId(mServiceUUID, pMethod), 
+                            pArgs);
+                }
                 
                 result = handler.invoke(call);
                 retryCount = RETRY_COUNT;

@@ -22,9 +22,15 @@ import org.kari.io.CompactObjectOutputStream;
  */
 public abstract class Base {
     /**
+     * Is buffer or stream call used
+     */
+    public static final boolean BUFFER_CALL = true;
+    
+    /**
      * Compression is preferred in out/in
      */
     public static final boolean COMPRESS = false;
+    
     /**
      * "no desc" out/in object streams preferred
      */

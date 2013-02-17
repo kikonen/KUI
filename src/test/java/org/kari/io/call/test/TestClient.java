@@ -37,15 +37,19 @@ public final class TestClient {
             return new Socket(pServerAddress, pPort);
         }
     };
-    
+
+    TestTicket mTicket = new TestTicket();
+
     private final CallSessionProvider mSessionProvider = new CallSessionProvider() {
-        private final TestTicket mTicket = new TestTicket();
-        
         @Override
         public Object getSessionId() {
             return mTicket;
         }
     };
+    
+    public void resetTicket() {
+        mTicket = new TestTicket();
+    }
     
     private void start() throws Exception {
         CallClient client = new CallClient(
@@ -56,8 +60,19 @@ public final class TestClient {
     
         TestService service = CallUtil.makeProxy(TestService.class,  client, mSessionProvider);
     
-        int idx = 0;
+        int count = 1;
+        boolean reset = false;
         
+        for (int i = 0; i < count; i++) {
+            if (reset) {
+                resetTicket();
+            }
+            runTests(service);
+        }
+    }
+
+    private void runTests(TestService service) {
+        int idx = 0;
         LOG.info("TEST " + (idx++) + " - testSimple");
         try {
             TestResult result = service.testSimple(new TestParam("hello"));

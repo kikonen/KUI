@@ -1,11 +1,13 @@
 .gradle/*
 bin/*
+*/bin/*
 db/*
 build/*
+*/build/*
 repos/*
 tmp/*
 *~
 ~*
 #*
 *#
-
+.gradle

@@ -58,7 +58,7 @@ public final class TestClient {
                 TestServer.PORT, 
                 mSocketFactory,
                 new TestIOFactory(),
-                new ServiceRegistry());
+                new ServiceRegistry(null));
     
         TestService service = CallUtil.makeProxy(TestService.class,  client, mSessionProvider);
     

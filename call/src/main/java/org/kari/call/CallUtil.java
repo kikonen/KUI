@@ -1,11 +1,8 @@
 package org.kari.call;
 
 import java.io.Closeable;
-import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.rmi.Remote;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 
 import org.apache.log4j.Logger;
 
@@ -17,42 +14,7 @@ import org.apache.log4j.Logger;
 public class CallUtil {
     private static final Logger LOG = Logger.getLogger(CallConstants.BASE_PKG + ".util");
 
-    private static final MessageDigest MD5;
-    
-    static {
-        try {
-            MD5 = MessageDigest.getInstance("MD5");
-        } catch (NoSuchAlgorithmException e) {
-            // occurs only if internal error;
-            throw new RuntimeException(e);
-        }
-    }
 
-    public static String getName(Class<? extends Remote> pService) {
-        ServiceName tag = pService.getAnnotation(ServiceName.class);
-        return tag.name();
-    }
-    
-    public static int getUUID(Class<? extends Remote> pService) {
-        ServiceName tag = pService.getAnnotation(ServiceName.class);
-        return tag.id();
-    }
-    
-    public static synchronized long getMethodId(Method pMethod) 
-    {
-        String desc = pMethod.toString();
-        
-        MD5.reset();
-        byte[] digest = MD5.digest(desc.getBytes());
-        
-        long value = 0;
-        for (int i = 0; i < digest.length; i += 2) {
-           value = (value << 8) + ((digest[i] ^ digest[i + 1]) & 0xff);
-        }
-        
-        return value;
-    }
-    
     /**
      * Get remote interface for some pService class
      */

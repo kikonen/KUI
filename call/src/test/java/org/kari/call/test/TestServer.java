@@ -70,7 +70,7 @@ public final class TestServer {
                 PORT, 
                 mSocketFactory, 
                 new TestIOFactory(),
-                new ServiceRegistry(),
+                new ServiceRegistry(null),
                 mInvoker);
         
         server.getRegistry().register(new TestServiceImpl());

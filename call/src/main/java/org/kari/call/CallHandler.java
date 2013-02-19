@@ -120,7 +120,7 @@ public final class CallHandler implements InvocationHandler {
     private synchronized long getMethodId(int pServiceUUID, Method pMethod) {
         Long id = mMethodIds.get(pMethod);
         if (id == null) {
-            id = CallUtil.getMethodId(pMethod);
+            id = mClient.getRegistry().getResolver().getMethodId(pMethod);
             mMethodIds.put(pMethod,  new Long(id));
         }
         

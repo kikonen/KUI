@@ -32,10 +32,22 @@ public final class ServiceRegistry {
     private final TIntObjectMap<TLongObjectMap<Method>> mMethods = 
             new TIntObjectHashMap<TLongObjectMap<Method>>();
     
-    public ServiceRegistry() {
-        super();
-    }
+    private final IdResolver mResolver;
+
     
+    /**
+     * @param pResolver null for default resolver
+     */
+    public ServiceRegistry(IdResolver pResolver) {
+        mResolver = pResolver != null 
+            ? pResolver 
+            : DefaultIdResolver.INSTANCE;
+    }
+
+    public IdResolver getResolver() {
+        return mResolver;
+    }
+
     /**
      * Find service from registry
      * 
@@ -60,8 +72,8 @@ public final class ServiceRegistry {
         return methods != null ? methods.get(pMethodId) : null;
     }
     
-    public synchronized int getServiceUUID(Class<? extends Remote> pService) {
-        return CallUtil.getUUID(pService);
+    public int getServiceUUID(Class<? extends Remote> pService) {
+        return mResolver.getUUID(pService);
     }
     
     /**
@@ -92,9 +104,9 @@ public final class ServiceRegistry {
         int uuid = 0;
         if (!mRegistered.contains(pService)) {
             mRegistered.add(pService);
-            uuid = CallUtil.getUUID(pService);
+            uuid = mResolver.getUUID(pService);
             
-            mNames.put(uuid, CallUtil.getName(pService));
+            mNames.put(uuid, mResolver.getName(pService));
             
             mMethods.put(uuid, collectMethods(pService));
         }        
@@ -120,7 +132,7 @@ public final class ServiceRegistry {
             }
 
             if (valid) {
-                long methodId = CallUtil.getMethodId(method);
+                long methodId = mResolver.getMethodId(method);
                 if (methods.containsKey(methodId)) {
                     throw new InvalidServiceException("duplicate methoidId: " + method);
                 }

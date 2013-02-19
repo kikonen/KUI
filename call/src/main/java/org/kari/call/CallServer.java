@@ -20,16 +20,23 @@ public final class CallServer extends Thread {
     private final IOFactory mIOFactory;
     private final ServiceRegistry mRegistry;
     
+    private final CallInvoker mCallInvoker;
+
+    
     private volatile boolean mRunning = true;
     private ServerSocket mServer;
     
     
+    /**
+     * @param pCallInvoker null for default invoker
+     */
     public CallServer(
             String pServerAddress,
             int pPort,
             CallServerSocketFactory pSocketFactory,
             IOFactory pIOFactory,
-            ServiceRegistry pRegistry) 
+            ServiceRegistry pRegistry,
+            CallInvoker pCallInvoker) 
     {
         super("Server-" + pPort);
         
@@ -39,6 +46,9 @@ public final class CallServer extends Thread {
         mIOFactory = pIOFactory;
         
         mRegistry = pRegistry;
+        mCallInvoker = pCallInvoker != null 
+            ? pCallInvoker 
+            : DefaultCallInvoker.INSTANCE;
     }
 
     public IOFactory getIOFactory() {
@@ -47,6 +57,10 @@ public final class CallServer extends Thread {
 
     public ServiceRegistry getRegistry() {
         return mRegistry;
+    }
+
+    public CallInvoker getCallInvoker() {
+        return mCallInvoker;
     }
 
     public int getPort() {

@@ -139,7 +139,9 @@ public final class ServerHandler extends Handler
             if (acked) {
                 try {
                     // execute after sending ack
-                    result = call.invoke(mServer.getRegistry());
+                    result = call.invoke(
+                            mServer.getRegistry(),
+                            mServer.getCallInvoker());
                 } catch (Throwable e) {
                     result = new ErrorResult(e);
                     // normal call failure

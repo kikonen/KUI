@@ -1,12 +1,15 @@
 package org.kari.call.test;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.ServerSocket;
+import java.rmi.Remote;
 
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
 import org.kari.call.CallConstants;
+import org.kari.call.CallInvoker;
 import org.kari.call.CallServer;
 import org.kari.call.ServiceRegistry;
 import org.kari.call.io.CallServerSocketFactory;
@@ -33,6 +36,24 @@ public final class TestServer {
         }
     };
     
+    private final CallInvoker mInvoker = new CallInvoker() {
+        @Override
+        public Object invoke(
+                Object pSessionId, 
+                Remote pService, 
+                Method pMethod,
+                Object[] pParams) 
+            throws Throwable 
+        {
+            LOG.info("session: " + pSessionId);
+            try {
+                return pMethod.invoke(pService, pParams);
+            } finally {
+                // nothing
+            }
+        }
+    };
+    
     public static void main(String[] args) {
         try {
             BasicConfigurator.configure();
@@ -49,7 +70,8 @@ public final class TestServer {
                 PORT, 
                 mSocketFactory, 
                 new TestIOFactory(),
-                new ServiceRegistry());
+                new ServiceRegistry(),
+                mInvoker);
         
         server.getRegistry().register(new TestServiceImpl());
     

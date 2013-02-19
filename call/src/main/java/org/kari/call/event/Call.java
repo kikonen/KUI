@@ -2,6 +2,7 @@ package org.kari.call.event;
 
 import org.apache.log4j.Logger;
 import org.kari.call.CallConstants;
+import org.kari.call.CallInvoker;
 import org.kari.call.CallType;
 import org.kari.call.ServiceRegistry;
 
@@ -40,7 +41,9 @@ public abstract class Call extends Base {
      * 
      * @return result, NullResult.INSTANCE for null
      */
-    public abstract Result invoke(ServiceRegistry pRegistry)
+    public abstract Result invoke(
+            ServiceRegistry pRegistry,
+            CallInvoker pInvoker)
         throws Throwable;
     
 }

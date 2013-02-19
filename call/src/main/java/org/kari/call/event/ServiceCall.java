@@ -7,6 +7,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.rmi.Remote;
 
+import org.kari.call.CallInvoker;
 import org.kari.call.CallType;
 import org.kari.call.ServiceRegistry;
 
@@ -49,14 +50,16 @@ public abstract class ServiceCall extends Call {
     }
 
     @Override
-    public final Result invoke(ServiceRegistry pRegistry) 
+    public final Result invoke(
+            ServiceRegistry pRegistry,
+            CallInvoker pInvoker) 
         throws Throwable
     {
         final Remote service = pRegistry.getService(mServiceUUID);
         final Method method = pRegistry.getMethod(mServiceUUID, mMethodId);
         
         try {
-            Object result = method.invoke(service, mParams);
+            Object result = pInvoker.invoke(mSessionId, service, method, mParams);
             return result != null 
                 ? createResult(result) 
                 : NullResult.INSTANCE;

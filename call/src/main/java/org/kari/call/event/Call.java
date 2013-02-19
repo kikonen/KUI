@@ -35,6 +35,9 @@ public abstract class Call extends Base {
     /**
      * Invoke service
      * 
+     * <p>NOTE KI invoke() is responsible for unwrapping possible 
+     * InvocationTargetException or such.
+     * 
      * @return result, NullResult.INSTANCE for null
      */
     public abstract Result invoke(ServiceRegistry pRegistry)

@@ -8,6 +8,7 @@ import gnu.trove.set.hash.THashSet;
 
 import java.lang.reflect.Method;
 import java.rmi.Remote;
+import java.rmi.RemoteException;
 import java.util.Set;
 
 /**
@@ -95,19 +96,39 @@ public final class ServiceRegistry {
             
             mNames.put(uuid, CallUtil.getName(pService));
             
-            TLongObjectMap<Method> methods = new TLongObjectHashMap<Method>();
-            mMethods.put(uuid, methods);
-            
-            for (Method method : pService.getMethods()) {
-                long methodId = CallUtil.getMethodId(method);
-                if (methods.containsKey(methodId)) {
-                    throw new InvalidServiceException("duplicate methoidId");
-                }
-                methods.put(methodId, method);
-            }
+            mMethods.put(uuid, collectMethods(pService));
         }        
         
         return uuid;
+    }
+
+    /**
+     * Collect valid "remote" methods. Remote method is required to throw
+     * RemoteException to allow exceptions from framework to be thrown.
+     */
+    private TLongObjectMap<Method> collectMethods(
+            Class<? extends Remote> pService) 
+        throws InvalidServiceException 
+    {
+        TLongObjectMap<Method> methods = new TLongObjectHashMap<Method>();
+        
+        for (Method method : pService.getMethods()) {
+            boolean valid = false;
+            
+            for (Class exType : method.getExceptionTypes()) {
+                valid |= RemoteException.class.isAssignableFrom(exType);
+            }
+
+            if (valid) {
+                long methodId = CallUtil.getMethodId(method);
+                if (methods.containsKey(methodId)) {
+                    throw new InvalidServiceException("duplicate methoidId: " + method);
+                }
+                methods.put(methodId, method);
+            }
+        }
+        
+        return methods;
     }
 
 }

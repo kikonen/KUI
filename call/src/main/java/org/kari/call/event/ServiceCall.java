@@ -9,6 +9,7 @@ import java.rmi.Remote;
 
 import org.kari.call.CallInvoker;
 import org.kari.call.CallType;
+import org.kari.call.RemoteMethodNotFoundException;
 import org.kari.call.ServiceRegistry;
 
 /**
@@ -57,6 +58,14 @@ public abstract class ServiceCall extends Call {
     {
         final Remote service = pRegistry.getService(mServiceUUID);
         final Method method = pRegistry.getMethod(mServiceUUID, mMethodId);
+
+        if (service== null) {
+            throw new RemoteMethodNotFoundException("Service not found");
+        }
+
+        if (method == null) {
+            throw new RemoteMethodNotFoundException("Method not found");
+        }
         
         try {
             Object result = pInvoker.invoke(mSessionId, service, method, mParams);

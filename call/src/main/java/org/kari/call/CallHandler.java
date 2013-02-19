@@ -3,6 +3,7 @@ package org.kari.call;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.rmi.Remote;
+import java.rmi.RemoteException;
 import java.util.IdentityHashMap;
 
 import org.kari.call.event.Base;
@@ -102,6 +103,8 @@ public final class CallHandler implements InvocationHandler {
                 
                 // small delay before retry
                 Thread.sleep(100);
+            } catch (RemoteMethodNotFoundException e) {
+                throw new RemoteException(e.getMessage() + ": " + pMethod);
             } finally {
                 mClient.release(handler);
             }

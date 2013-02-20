@@ -20,7 +20,14 @@ dependencies {
     ]
 
     compile ext_libs
+    compile project(":")
     testCompile group: 'junit', name: 'junit', version: '4.+'
+}
+
+sourceSets {
+	test {
+//		runtimeClasspath += rootProject.sourceSets.test.runtimeClasspath
+	}
 }
 
 test {
@@ -33,4 +40,15 @@ uploadArchives {
            dirs 'repos'
        }
     }
+}
+
+task(runServer, dependsOn: 'testClasses', type: JavaExec) {
+	main = "org.kari.call.test.TestServer"
+	classpath = sourceSets.test.runtimeClasspath	
+}
+
+task(runClient, dependsOn: 'testClasses', type: JavaExec) {
+	main = "org.kari.call.test.TestClient"
+	classpath = sourceSets.test.runtimeClasspath
+	args "" + System.properties['host']
 }

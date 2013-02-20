@@ -23,7 +23,7 @@ public final class TestClient {
     public static void main(String[] args) {
         try {
             BasicConfigurator.configure();
-            new TestClient().start();
+            new TestClient().start(args);
         } catch (Exception e) {
             LOG.error("client failed", e);
             System.exit(-1);
@@ -52,9 +52,13 @@ public final class TestClient {
         mTicket = new TestTicket();
     }
     
-    private void start() throws Exception {
+    private void start(String[] pArgs) throws Exception {
+        String host = pArgs.length > 0 
+            ? pArgs[0]
+            : "localhost";
+            
         CallClient client = new CallClient(
-                "localhost", 
+                host, 
                 TestServer.PORT, 
                 mSocketFactory,
                 new TestIOFactory(),

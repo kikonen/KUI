@@ -85,4 +85,15 @@ public final class CompactObjectInputStream
         
         return ObjectStreamClass.lookup(cls);
     }
+    
+    /**
+     * <p>NOTE KI there is never remote class loading
+     */
+    @Override
+    protected Class<?> resolveClass(ObjectStreamClass pDesc)
+        throws IOException, ClassNotFoundException
+    {
+        return pDesc.forClass();
+    }
+
 }

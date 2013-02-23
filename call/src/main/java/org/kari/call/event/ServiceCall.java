@@ -8,7 +8,6 @@ import java.lang.reflect.Method;
 import java.rmi.Remote;
 
 import org.kari.call.CallInvoker;
-import org.kari.call.CallType;
 import org.kari.call.RemoteMethodNotFoundException;
 import org.kari.call.ServiceRegistry;
 
@@ -26,8 +25,8 @@ public abstract class ServiceCall extends Call {
     /**
      * For server side handling
      */
-    protected ServiceCall(CallType pType) {
-        super(pType, null, false);
+    protected ServiceCall() {
+        super();
     }
     
     /**
@@ -36,14 +35,13 @@ public abstract class ServiceCall extends Call {
      * @param pParams null if no params
      */
     protected ServiceCall(
-            CallType pType,
             Object pSessionId,
             boolean pSessionIdChanged,
             int pServiceUUID, 
             long pMethodId,
             Object[] pParams) 
     {
-        super(pType, pSessionId, pSessionIdChanged);
+        super(pSessionId, pSessionIdChanged);
     
         mServiceUUID = pServiceUUID;
         mMethodId = pMethodId;

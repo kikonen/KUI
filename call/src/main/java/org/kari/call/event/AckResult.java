@@ -3,7 +3,6 @@ package org.kari.call.event;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 
-import org.kari.call.CallType;
 import org.kari.call.Handler;
 
 /**
@@ -12,8 +11,8 @@ import org.kari.call.Handler;
  * @author kari
  */
 public abstract class AckResult extends Result {
-    protected AckResult(CallType pAck) {
-        super(pAck);
+    protected AckResult() {
+        super();
     }
     
     @Override

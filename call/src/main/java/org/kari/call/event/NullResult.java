@@ -16,9 +16,14 @@ public final class NullResult extends Result {
     public static final NullResult INSTANCE = new NullResult();
     
     public NullResult() {
-        super(CallType.RESULT_NULL);
+        super();
     }
     
+    @Override
+    public CallType getType() {
+        return CallType.RESULT_NULL;
+    }
+
     @Override
     public Object getResult() {
         return null;

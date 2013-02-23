@@ -1,5 +1,7 @@
 package org.kari.call;
 
+import gnu.trove.map.hash.TIntObjectHashMap;
+
 import java.rmi.RemoteException;
 
 import org.kari.call.event.AckCallReceived;
@@ -27,21 +29,31 @@ public enum CallType {
     public final byte mCode;
     public final Class<? extends Base> mClass;
     
+    private static TIntObjectHashMap<CallType> mCache;
+
+    
     private CallType(int pCode, Class<? extends Base> pClass) {
         mCode = (byte)pCode;
         mClass = pClass;
     }
-    
+
+    public static synchronized void initCache() {
+        TIntObjectHashMap<CallType> cache = mCache;
+        if (cache == null) {
+            cache = new TIntObjectHashMap<CallType>();
+            for (CallType type : values()) {
+                cache.put(type.mCode, type);
+            }
+        }
+        mCache = cache;
+    }
+
     /**
      * @return type, UNKNOWN if not found
      */
     public static CallType resolve(int pCode) {
-        for (CallType type : values()) {
-            if (type.mCode == pCode) {
-                return type;
-            }
-        }
-        return UNKNOWN;
+        CallType result = mCache.get(pCode);
+        return result != null ? result : UNKNOWN;
     }
     
     public Base create() throws RemoteException {

@@ -11,7 +11,12 @@ public final class AckCallReceived extends AckResult {
     public static final AckCallReceived INSTANCE = new AckCallReceived();
 
     public AckCallReceived() {
-        super(CallType.ACK_CALL_RECEIVED);
+        super();
+    }
+
+    @Override
+    public CallType getType() {
+        return CallType.ACK_CALL_RECEIVED;
     }
 
 }

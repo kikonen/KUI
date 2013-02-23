@@ -22,14 +22,18 @@ public final class BufferResult extends Result {
      * For decoding result
      */
     public BufferResult() {
-        super(CallType.BUFFER_RESULT);
+        super();
     }
 
     public BufferResult(Object pResult) {
-        super(CallType.BUFFER_RESULT);
+        super();
         mResult = pResult;
     }
 
+    @Override
+    public CallType getType() {
+        return CallType.BUFFER_RESULT;
+    }
 
     @Override
     public Object getResult() {

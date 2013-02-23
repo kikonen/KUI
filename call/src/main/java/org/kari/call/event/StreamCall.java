@@ -24,9 +24,9 @@ public final class StreamCall extends ServiceCall {
      * For decoding call
      */
     public StreamCall() {
-        super(CallType.STREAM_CALL);
+        super();
     }
-    
+
     /**
      * @param pSessionId Identifies session for session authentication, 
      * can be null
@@ -39,7 +39,12 @@ public final class StreamCall extends ServiceCall {
             long pMethodId,
             Object[] pParams) 
     {
-        super(CallType.STREAM_CALL, pSessionId, pSessionIdChanged, pServiceUUID, pMethodId, pParams);
+        super(pSessionId, pSessionIdChanged, pServiceUUID, pMethodId, pParams);
+    }
+    
+    @Override
+    public CallType getType() {
+        return CallType.STREAM_CALL;
     }
     
     @Override

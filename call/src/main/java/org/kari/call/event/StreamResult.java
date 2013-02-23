@@ -21,14 +21,19 @@ public final class StreamResult extends Result {
      * For result reading
      */
     public StreamResult() {
-        super(CallType.STREAM_RESULT);
+        super();
     }
     
     public StreamResult(Object pResult) {
-        super(CallType.STREAM_RESULT);
+        super();
         mResult = pResult;
     }
     
+    @Override
+    public CallType getType() {
+        return CallType.STREAM_RESULT;
+    }
+
     @Override
     public Object getResult() {
         return mResult;

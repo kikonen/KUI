@@ -21,6 +21,7 @@ import org.kari.call.io.CallServerSocketFactory;
  */
 public final class TestServer {
     private static final Logger LOG = Logger.getLogger(CallConstants.BASE_PKG + ".test.server");
+    private static final boolean TRACE = TestClient.TRACE;
     
     static final int PORT = 8100;
     
@@ -45,7 +46,7 @@ public final class TestServer {
                 Object[] pParams) 
             throws Throwable 
         {
-            LOG.info("session: " + pSessionId);
+            if (TRACE) LOG.info("session: " + pSessionId);
             try {
                 return pMethod.invoke(pService, pParams);
             } finally {

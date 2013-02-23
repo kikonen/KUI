@@ -6,6 +6,7 @@ import java.net.Socket;
 
 import org.apache.log4j.Logger;
 import org.kari.call.io.CallServerSocketFactory;
+import org.kari.call.io.DefaultCallServerSocketFactory;
 import org.kari.call.io.IOFactory;
 
 /**
@@ -13,6 +14,10 @@ import org.kari.call.io.IOFactory;
  */
 public final class CallServer extends Thread {
     private static final Logger LOG = Logger.getLogger(CallConstants.BASE_PKG + ".server");
+
+    static {
+        CallType.initCache();
+    }
 
     private final String mServerAddress;
     private final int mPort;
@@ -28,6 +33,11 @@ public final class CallServer extends Thread {
     
     
     /**
+     * @param pServerAddress Either actual IP/host or application specific
+     * identity for server addresses
+     * @param pSocketFactory if null default (plain socket) is used
+     * @param pIOFactory if null default is used
+     * @param pRegistry If null new registry is created with default resolver
      * @param pCallInvoker null for default invoker
      */
     public CallServer(
@@ -42,10 +52,19 @@ public final class CallServer extends Thread {
         
         mServerAddress = pServerAddress;
         mPort = pPort;
-        mSocketFactory = pSocketFactory;
-        mIOFactory = pIOFactory;
         
-        mRegistry = pRegistry;
+        mSocketFactory = pSocketFactory != null
+            ? pSocketFactory
+            : DefaultCallServerSocketFactory.INSTANCE;
+        
+        mIOFactory = pIOFactory != null
+            ? pIOFactory
+            : DefaultIOFactory.INSTANCE;
+        
+        mRegistry = pRegistry != null
+            ? pRegistry
+            : new ServiceRegistry(null);
+        
         mCallInvoker = pCallInvoker != null 
             ? pCallInvoker 
             : DefaultCallInvoker.INSTANCE;
@@ -95,7 +114,7 @@ public final class CallServer extends Thread {
                 
                 if (socket != null) {
                     try {
-                        new ServerHandler(this, socket).start();
+                        createHandler(socket).start();
                     } catch (Throwable e) {
                         LOG.error("handler failed", e);
                         CallUtil.closeSocket(socket);
@@ -105,6 +124,13 @@ public final class CallServer extends Thread {
         } finally {
             closeServerSocket();
         }
+    }
+
+    /**
+     * Create new handler for pSocket. Handler is not started yet.
+     */
+    public ServerHandler createHandler(Socket pSocket) throws IOException {
+        return new ServerHandler(this, pSocket);
     }
     
     private synchronized ServerSocket openServerSocket() 
@@ -116,7 +142,13 @@ public final class CallServer extends Thread {
         return mServer;
     }
 
-    private synchronized void closeServerSocket() {
+    /**
+     * Closes server socket if it's currently existing. Effectively this allows 
+     * restarting server, without killing it. For example, if server socket
+     * is somehow "stuck" due to OS issues, or actual server IP identified
+     * by server address has changed.
+     */
+    public synchronized void closeServerSocket() {
         if (mServer != null) {
             mServer = CallUtil.closeSocket(mServer);
         }

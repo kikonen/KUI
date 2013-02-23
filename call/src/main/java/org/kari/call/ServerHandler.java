@@ -8,6 +8,7 @@ import org.kari.call.event.AckCallReceived;
 import org.kari.call.event.Call;
 import org.kari.call.event.ErrorResult;
 import org.kari.call.event.Result;
+import org.kari.call.test.TestClient;
 
 /**
  * Handles all incoming in one socket
@@ -19,7 +20,8 @@ public final class ServerHandler extends Handler
         Runnable
 {
     private static final Logger LOG = Logger.getLogger(CallConstants.BASE_PKG + ".server_handler");
-    
+    private static final boolean TRACE = TestClient.TRACE;
+
     private final CallServer mServer;
     
     private Thread mThread;
@@ -81,8 +83,8 @@ public final class ServerHandler extends Handler
                         handle(type);
                     }
                 } finally {
-                    if (false) {
-                        LOG.info("out=" + mCountOut.getMarkSize() + ", in=" + mCountIn.getMarkSize());
+                    if (true) {
+                        if (TRACE) LOG.info("out=" + mCountOut.getMarkSize() + ", in=" + mCountIn.getMarkSize());
                     }
                 }
             }

@@ -26,7 +26,7 @@ public final class BufferCall extends ServiceCall {
      * For decoding call
      */
     public BufferCall() {
-        super(CallType.BUFFER_CALL);
+        super();
     }
     
     /**
@@ -41,9 +41,14 @@ public final class BufferCall extends ServiceCall {
             long pMethodId,
             Object[] pParams) 
     {
-        super(CallType.BUFFER_CALL, pSessionId, pSessionIdChanged, pServiceUUID, pMethodId, pParams);
+        super(pSessionId, pSessionIdChanged, pServiceUUID, pMethodId, pParams);
     }
-    
+
+    @Override
+    public CallType getType() {
+        return CallType.BUFFER_CALL;
+    }
+
     @Override
     protected void write(Handler pHandler, DataOutputStream pOut) 
         throws Exception

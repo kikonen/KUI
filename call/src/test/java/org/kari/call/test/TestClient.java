@@ -19,6 +19,8 @@ import org.kari.call.io.CallClientSocketFactory;
  */
 public final class TestClient {
     private static final Logger LOG = Logger.getLogger(CallConstants.BASE_PKG + ".test.client");
+    public static final boolean TRACE = true;
+
     
     public static void main(String[] args) {
         try {
@@ -79,72 +81,74 @@ public final class TestClient {
 
     private void runTests(TestService service) {
         int idx = 0;
-        LOG.info("TEST " + (idx++) + " - testSimple");
+        if (TRACE) LOG.info("TEST " + (idx++) + " - testSimple");
         try {
             TestResult result = service.testSimple(new TestParam("hello"));
-            LOG.info("response: " + result);    
+            if (TRACE) LOG.info("response: " + result);    
         } catch (Exception e) {
             LOG.error("Failed", e);
         }
 
-        LOG.info("TEST " + (idx++) + " - testSimple-cachedSessionId");
+        if (TRACE) LOG.info("TEST " + (idx++) + " - testSimple-cachedSessionId");
         try {
             TestResult result = service.testSimple(new TestParam("hello"));
-            LOG.info("response: " + result);    
+            if (TRACE) LOG.info("response: " + result);    
         } catch (Exception e) {
             LOG.error("Failed", e);
         }
 
-        LOG.info("TEST " + (idx++) + " - testVoidParam");
+        if (TRACE) LOG.info("TEST " + (idx++) + " - testVoidParam");
         try {
             TestResult result = service.testVoidParam();
-            LOG.info("response: " + result);    
+            if (TRACE) LOG.info("response: " + result);    
         } catch (Exception e) {
             LOG.error("Failed", e);
         }
     
-        LOG.info("TEST " + (idx++) + " - testNullResult");
+        if (TRACE) LOG.info("TEST " + (idx++) + " - testNullResult");
         try {
             TestResult result = service.testNullResult(new TestParam("hello"));
-            LOG.info("response: " + result);    
+            if (TRACE) LOG.info("response: " + result);    
         } catch (Exception e) {
             LOG.error("Failed", e);
         }
     
-        LOG.info("TEST " + (idx++) + " - testNullParam");
+        if (TRACE) LOG.info("TEST " + (idx++) + " - testNullParam");
         try {
             TestResult result = service.testNullParam(null);
-            LOG.info("response: " + result);    
+            if (TRACE) LOG.info("response: " + result);    
         } catch (Exception e) {
             LOG.error("Failed", e);
         }
     
-        LOG.info("TEST " + (idx++) + " - testVoidResult");
+        if (TRACE) LOG.info("TEST " + (idx++) + " - testVoidResult");
         try {
             service.testVoidResult(new TestParam("hello"));
-            LOG.info("response: VOID");    
+            if (TRACE) LOG.info("response: VOID");    
         } catch (Exception e) {
             LOG.error("Failed", e);
         }
 
-        LOG.info("TEST " + (idx++) + " - bigCall");
+        if (TRACE) LOG.info("TEST " + (idx++) + " - bigCall");
         try {
             byte[] in = new byte[100000];
             for (int i = 0; i < in.length; i++) {
                 in[i] = (byte)i;
             }
             byte[] out = service.testBigCall(in);
-            LOG.info("response: " + out.length);    
+            if (TRACE) LOG.info("response: " + out.length);    
         } catch (Exception e) {
             LOG.error("Failed", e);
         }
 
-        LOG.info("TEST " + (idx++) + " - testError");
+        if (TRACE) LOG.info("TEST " + (idx++) + " - testError");
         try {
             TestResult result = service.testError(new TestParam("hello"));
-            LOG.info("response: " + result);    
+            if (TRACE) LOG.info("response: " + result);    
+        } catch (TestException e) {
+            if (TRACE) LOG.info("Expected Error", e);
         } catch (Exception e) {
-            LOG.error("Expected Error", e);
+            LOG.error("Failed", e);
         }
     }
 

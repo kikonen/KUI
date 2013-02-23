@@ -9,6 +9,10 @@ import java.io.OutputStream;
 /**
  * Abstraction for IO streams
  *
+ * <p>TODO KI refactor logic to allow using Deflator directly to avoid
+ * re-allocation overhead of GZipOutputStream (Deflator/Inflater should be 
+ * reusable)
+ * 
  * @author kari
  */
 public interface IOFactory {

@@ -21,14 +21,19 @@ public final class ErrorResult extends Result {
      * For error reading
      */
     public ErrorResult() {
-        super(CallType.ERROR);
+        super();
     }
     
     public ErrorResult(Throwable pError) {
-        super(CallType.ERROR);
+        super();
         mError = pError;
     }
     
+    @Override
+    public CallType getType() {
+        return CallType.ERROR;
+    }
+
     @Override
     public Object getResult() 
         throws Throwable

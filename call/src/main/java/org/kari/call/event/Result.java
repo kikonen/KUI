@@ -2,7 +2,6 @@ package org.kari.call.event;
 
 import org.apache.log4j.Logger;
 import org.kari.call.CallConstants;
-import org.kari.call.CallType;
 
 /**
  * Base type of different results
@@ -13,8 +12,8 @@ public abstract class Result extends Base {
     public static final Logger LOG = Logger.getLogger(CallConstants.BASE_PKG + ".result");
     
     
-    protected Result(CallType pType) {
-        super(pType);
+    protected Result() {
+        super();
     }
     
     /**

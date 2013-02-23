@@ -3,7 +3,6 @@ package org.kari.call.event;
 import org.apache.log4j.Logger;
 import org.kari.call.CallConstants;
 import org.kari.call.CallInvoker;
-import org.kari.call.CallType;
 import org.kari.call.ServiceRegistry;
 
 /**
@@ -18,8 +17,12 @@ public abstract class Call extends Base {
     protected boolean mSessionIdChanged;
 
     
-    protected Call(CallType pType, Object pSessionId, boolean pSessionIdChanged) {
-        super(pType);
+    protected Call() {
+        super();
+    }
+    
+    protected Call(Object pSessionId, boolean pSessionIdChanged) {
+        super();
         
         mSessionId = pSessionId;
         mSessionIdChanged = pSessionIdChanged;

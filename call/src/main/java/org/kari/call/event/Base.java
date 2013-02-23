@@ -16,14 +16,15 @@ import org.kari.call.Handler;
  * @author kari
  */
 public abstract class Base {
+    static {
+        CallType.initCache();
+    }
+    
     /**
      * Is buffer or stream call used
      */
     public static final boolean BUFFER_CALL = true;
 
-    private final CallType mType;
-
-    
     /**
      * Read data fully from pIn
      */
@@ -48,13 +49,11 @@ public abstract class Base {
     }
 
     
-    protected Base(CallType pType) {
-        mType = pType;
+    protected Base() {
+        // nothing
     }
     
-    public final CallType getType() {
-        return mType;
-    }
+    public abstract CallType getType();
     
     /**
      * Write type and call {@link #write(DataOutputStream)}
@@ -63,7 +62,8 @@ public abstract class Base {
         throws Exception
     {
         pHandler.getBuffer().reset();
-        pOut.write(mType.mCode);
+        
+        pOut.write(getType().mCode);
         write(pHandler, pOut);
         
         pOut.flush();

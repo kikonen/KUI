@@ -5,35 +5,37 @@ import java.rmi.RemoteException;
 import org.apache.log4j.Logger;
 import org.kari.call.CallConstants;
 
-public class TestServiceImpl implements TestService {
-    private static final Logger LOG = Logger.getLogger(CallConstants.BASE_PKG + ".test.service");
 
+public final class TestServiceImpl implements TestService {
+    private static final Logger LOG = Logger.getLogger(CallConstants.BASE_PKG + ".test.service");
+    private static final boolean TRACE = TestClient.TRACE;
+    
     @Override
     public void testVoidResult(TestParam pParam) throws RemoteException {
-        LOG.info("voidResult: " + pParam);
+        if (TRACE) LOG.info("voidResult: " + pParam);
     }
 
     @Override
     public TestResult testNullResult(TestParam pParam) throws RemoteException {
-        LOG.info("nullResult: " + pParam);
+        if (TRACE) LOG.info("nullResult: " + pParam);
         return null;
     }
 
     @Override
     public TestResult testNullParam(TestParam pParam) throws RemoteException {
-        LOG.info("nullParam: " + pParam);
+        if (TRACE) LOG.info("nullParam: " + pParam);
         return new TestResult(pParam);
     }
 
     @Override
     public TestResult testVoidParam() throws RemoteException {
-        LOG.info("voidParam:");
+        if (TRACE) LOG.info("voidParam:");
         return new TestResult("void-param");
     }
 
     @Override
     public TestResult testSimple(TestParam pParam) throws RemoteException {
-        LOG.info("simple: " + pParam);
+        if (TRACE) LOG.info("simple: " + pParam);
         return new TestResult(pParam);
     }
 
@@ -42,13 +44,13 @@ public class TestServiceImpl implements TestService {
         throws RemoteException,
             TestException 
     {
-        LOG.info("error: " + pParam);
+        if (TRACE) LOG.info("error: " + pParam);
         throw new TestException("err-" + pParam);
     }
 
     @Override
     public byte[] testBigCall(byte[] pData) throws RemoteException {
-        LOG.info("big: " + pData.length);
+        if (TRACE) LOG.info("big: " + pData.length);
         return pData;
     }
     

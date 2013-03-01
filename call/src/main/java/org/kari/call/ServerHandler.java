@@ -19,7 +19,6 @@ public final class ServerHandler extends Handler
         Runnable
 {
     private static final Logger LOG = Logger.getLogger(CallConstants.BASE_PKG + ".server_handler");
-    private static final boolean TRACE = false;
 
     private final CallServer mServer;
     
@@ -82,9 +81,8 @@ public final class ServerHandler extends Handler
                         handle(type);
                     }
                 } finally {
-                    if (true) {
-                        if (TRACE) LOG.info("out=" + mCountOut.getMarkSize() + ", in=" + mCountIn.getMarkSize());
-                    }
+                    if (TRACE) LOG.info("out=" + mCountOut.getMarkSize() + ", in=" + mCountIn.getMarkSize());
+                    mCounter.add(mCountOut.getCount(), mCountIn.getCount());
                 }
             }
         } catch (Exception e) {

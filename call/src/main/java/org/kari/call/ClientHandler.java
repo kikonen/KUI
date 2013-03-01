@@ -62,9 +62,8 @@ public final class ClientHandler extends Handler {
                 throw new RetryCallException("Retry call", e);
             }
         } finally {
-            if (false) {
-                LOG.info("out=" + mCountOut.getMarkSize() + ", in=" + mCountIn.getMarkSize());
-            }
+            if (TRACE) LOG.info("out=" + mCountOut.getMarkSize() + ", in=" + mCountIn.getMarkSize());
+            mCounter.add(mCountOut.getCount(), mCountIn.getCount());
         }
         
         return result.getResult();

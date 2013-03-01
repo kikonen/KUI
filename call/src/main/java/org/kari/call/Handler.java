@@ -20,6 +20,7 @@ import org.kari.call.io.IOFactory;
  */
 public abstract class Handler {
     private static final Logger LOG = Logger.getLogger(CallConstants.BASE_PKG + ".handler");
+    static final boolean TRACE = false;
 
     protected final Socket mSocket;
     
@@ -30,6 +31,8 @@ public abstract class Handler {
     protected final DataOutputStream mOut;
 
     protected final IOFactory mIOFactory;
+    
+    protected final TransferCounter mCounter;
 
     private DirectByteArrayOutputStream mBuffer;
     private byte[] mDataBuffer;
@@ -49,6 +52,7 @@ public abstract class Handler {
         mOut = new DataOutputStream(new BufferedOutputStream(mCountOut));
         
         mIOFactory = pIOFactory;
+        mCounter = TransferCounter.INSTANCE;
     }
     
     public void kill() {

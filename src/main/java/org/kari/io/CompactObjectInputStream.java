@@ -71,11 +71,13 @@ public final class CompactObjectInputStream
     }
     
     private static final ConcurrentHashMap<TypeKey, Class> CACHED_TYPES = new ConcurrentHashMap<TypeKey, Class>();
+    private static final ConcurrentHashMap<Class<?>, ObjectStreamClass> CACHED_STREAM_TYPES = new ConcurrentHashMap<Class<?>, ObjectStreamClass>();
     private static final byte[] EMPTY_SUFFIX = CompactObjectOutputStream.EMPTY_SUFFIX;
 
     
     private final TypeKey mKey = new TypeKey(0, EMPTY_SUFFIX, (short)0, false);
     private byte[] mSuffixBuffer = EMPTY_SUFFIX;
+    
 
 
     public CompactObjectInputStream()
@@ -133,7 +135,13 @@ public final class CompactObjectInputStream
             }
         }
         
-        return ObjectStreamClass.lookup(cls);
+        
+        ObjectStreamClass type = CACHED_STREAM_TYPES.get(cls);
+        if (type == null) {
+            type = ObjectStreamClass.lookup(cls);
+            CACHED_STREAM_TYPES.put(cls,  type);
+        }
+        return type;
     }
     
     /**

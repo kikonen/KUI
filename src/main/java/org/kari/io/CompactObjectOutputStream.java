@@ -119,6 +119,7 @@ public final class CompactObjectOutputStream
     {
         final Class<?> cls = desc.forClass();
 
+        int prefixLen = 0;
         byte[] encodedSuffix = null;
         int classId = 0;
         int code = TYPE_TO_CODE.get(cls);
@@ -128,16 +129,16 @@ public final class CompactObjectOutputStream
         } else {
             String name = cls.getName();
             code = TYPE_PLAIN;
+            encodedSuffix = name.getBytes(SUFFIX_ENCODING);
             
             for (int prefixId : PREFIX_IDS) {
                 String prefix = PREFIX_VALUES.get(prefixId);
                 if (name.startsWith(prefix)) {
                     code = (byte)prefixId;
-                    name = name.substring(prefix.length());
+                    prefixLen = prefix.length();
                     break;
                 }
             }
-            encodedSuffix = name.getBytes(SUFFIX_ENCODING);
         }
         
         writeByte( (byte)code );
@@ -146,8 +147,9 @@ public final class CompactObjectOutputStream
         }
         
         if (encodedSuffix != null) {
-            writeShort(encodedSuffix.length);
-            write(encodedSuffix);
+            int suffixLen = encodedSuffix.length - prefixLen;
+            writeShort(suffixLen);
+            write(encodedSuffix, prefixLen, suffixLen);
         }
     }
 }

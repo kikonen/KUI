@@ -71,10 +71,12 @@ public final class CompactObjectInputStream
     }
     
     private static final ConcurrentHashMap<TypeKey, Class> CACHED_TYPES = new ConcurrentHashMap<TypeKey, Class>();
-    private static final byte[] EMPTY_SUFFIX = new byte[0];
+    private static final byte[] EMPTY_SUFFIX = CompactObjectOutputStream.EMPTY_SUFFIX;
 
+    
     private final TypeKey mKey = new TypeKey(0, EMPTY_SUFFIX, (short)0, false);
     private byte[] mSuffixBuffer = EMPTY_SUFFIX;
+
 
     public CompactObjectInputStream()
         throws IOException,

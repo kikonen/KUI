@@ -29,17 +29,18 @@ import java.util.Set;
 public final class CompactObjectOutputStream
     extends ObjectOutputStream
 {
-    public static final byte TYPE_PLAIN = 0;
-    public static final byte TYPE_CLASS_ID = 1;
+    static final byte TYPE_PLAIN = 0;
+    static final byte TYPE_CLASS_ID = 1;
 
-    public static final Charset SUFFIX_ENCODING = Charset.forName("UTF8");
+    static final Charset SUFFIX_ENCODING = Charset.forName("UTF8");
+    static final byte[] EMPTY_SUFFIX = new byte[0];
     
-    public static final Class ARRAY_CLASS = Object[].class;
-    public static final TIntObjectMap<Class> CODE_TO_TYPE = new TIntObjectHashMap<Class>();
-    public static final TObjectIntMap<Class> TYPE_TO_CODE = new TObjectIntHashMap<Class>();
+    static final Class ARRAY_CLASS = Object[].class;
+    static final TIntObjectMap<Class> CODE_TO_TYPE = new TIntObjectHashMap<Class>();
+    static final TObjectIntMap<Class> TYPE_TO_CODE = new TObjectIntHashMap<Class>();
 
-    public static final TIntObjectMap<String> PREFIX_VALUES = new TIntObjectHashMap<String>();
-    public static final int[] PREFIX_IDS;
+    static final TIntObjectMap<String> PREFIX_VALUES = new TIntObjectHashMap<String>();
+    static final int[] PREFIX_IDS;
     static {
         {
             char BASE = 'A';
@@ -92,6 +93,10 @@ public final class CompactObjectOutputStream
         });
     }
 
+    
+    private byte[] mSuffixBuffer = EMPTY_SUFFIX;
+
+    
     public CompactObjectOutputStream()
         throws IOException,
             SecurityException
@@ -120,6 +125,7 @@ public final class CompactObjectOutputStream
         final Class<?> cls = desc.forClass();
 
         int prefixLen = 0;
+        int suffixLen = 0;
         byte[] encodedSuffix = null;
         int classId = 0;
         int code = TYPE_TO_CODE.get(cls);
@@ -127,9 +133,16 @@ public final class CompactObjectOutputStream
         if (code != 0) {
             // ok fixed type
         } else {
-            String name = cls.getName();
             code = TYPE_PLAIN;
-            encodedSuffix = name.getBytes(SUFFIX_ENCODING);
+            final String name = cls.getName();
+            final int nameLen = name.length();
+            
+            encodedSuffix = mSuffixBuffer; 
+            if (nameLen > encodedSuffix.length) {
+                encodedSuffix = new byte[10 + nameLen];
+                mSuffixBuffer = encodedSuffix;
+            }
+            name.getBytes(0, nameLen, encodedSuffix, 0);
             
             for (int prefixId : PREFIX_IDS) {
                 String prefix = PREFIX_VALUES.get(prefixId);
@@ -139,6 +152,7 @@ public final class CompactObjectOutputStream
                     break;
                 }
             }
+            suffixLen = nameLen - prefixLen;
         }
         
         writeByte( (byte)code );
@@ -147,7 +161,6 @@ public final class CompactObjectOutputStream
         }
         
         if (encodedSuffix != null) {
-            int suffixLen = encodedSuffix.length - prefixLen;
             writeShort(suffixLen);
             write(encodedSuffix, prefixLen, suffixLen);
         }

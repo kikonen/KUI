@@ -11,31 +11,71 @@ public final class CompactObjectInputStream
 {
     static final class TypeKey {
         private int mCode;
-        private String mName;
+        private byte[] mEncodedSuffix;
+        private short mSuffixLen;
+        private int mHashCode;
         
-        public TypeKey(int pCode, String pName) {
+        /**
+         * @param pClone if true copy of pEncodedSuffix is done
+         */
+        public TypeKey(
+                int pCode, 
+                byte[] pEncodedSuffix,
+                short pSuffixLen,
+                boolean pClone)
+        {
+            set(pCode, pEncodedSuffix, pSuffixLen, pClone);
+        }
+        
+        void set(
+                int pCode, 
+                byte[] pEncodedSuffix,
+                short pSuffixLen,
+                boolean pClone) 
+        {
             mCode = pCode;
-            mName = pName;
+            if (pClone) {
+                mEncodedSuffix = new byte[pSuffixLen];
+                System.arraycopy(pEncodedSuffix, 0, mEncodedSuffix, 0, pSuffixLen);
+            } else {
+                mEncodedSuffix = pEncodedSuffix;
+            }
+            mSuffixLen = pSuffixLen;
+            
+            int hash = pCode;
+            for (int i = 0; i < pSuffixLen; i++) {
+                hash = 31 * hash + pEncodedSuffix[i];
+            }
+            mHashCode = hash;
         }
 
         @Override
         public int hashCode() {
-            return mCode ^ mName.hashCode();
+            return mHashCode;
         }
 
         @Override
         public boolean equals(Object pObj) {
-            return pObj != null
+            boolean result = pObj != null
                 && pObj.getClass() == getClass()
-                && mCode == ((TypeKey)pObj).mCode
-                && mName.equals( ((TypeKey)pObj).mName );
+                && mCode == ((TypeKey)pObj).mCode;
+            if (result) {
+                byte[] encodedB = ((TypeKey)pObj).mEncodedSuffix;
+                for (int i = mSuffixLen - 1; result && i >= 0; i--) {
+                    result = mEncodedSuffix[i] == encodedB[i];
+                }
+            }
+            
+            return result;
         }
     }
     
     private static final ConcurrentHashMap<TypeKey, Class> CACHED_TYPES = new ConcurrentHashMap<TypeKey, Class>();
+    private static final byte[] EMPTY_SUFFIX = new byte[0];
 
-    private final TypeKey mKey = new TypeKey(0, "");
-    
+    private final TypeKey mKey = new TypeKey(0, EMPTY_SUFFIX, (short)0, false);
+    private byte[] mSuffixBuffer = EMPTY_SUFFIX;
+
     public CompactObjectInputStream()
         throws IOException,
             SecurityException
@@ -68,18 +108,26 @@ public final class CompactObjectInputStream
         if (cls != null) {
             // ok fixed type
         } else {
-            String suffix = readUTF();
+            short suffixLen = readShort();
+            byte[] encodedSuffix = mSuffixBuffer;
+            if (encodedSuffix.length < suffixLen){
+                encodedSuffix = new byte[20 + suffixLen];
+                mSuffixBuffer = encodedSuffix;
+            }
+            read(encodedSuffix, 0, suffixLen);
 
-            mKey.mCode = id;
-            mKey.mName = suffix;
+            mKey.set(id, encodedSuffix, suffixLen, false);
 
             cls = CACHED_TYPES.get(mKey);
 
             if (cls == null) {
                 String prefix = CompactObjectOutputStream.PREFIX_VALUES.get(id);
     
+                String suffix = new String(encodedSuffix, 0, suffixLen);
                 cls = Class.forName(prefix != null ? prefix + suffix : suffix);
-                CACHED_TYPES.putIfAbsent(new TypeKey(id, suffix), cls);
+                CACHED_TYPES.putIfAbsent(
+                        new TypeKey(id, encodedSuffix, suffixLen, true), 
+                        cls);
             }
         }
         

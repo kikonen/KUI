@@ -27,7 +27,7 @@ public final class ServerHandler extends Handler
 
     
     public ServerHandler(CallServer pServer, Socket pSocket) throws IOException {
-        super(pSocket, pServer.getIOFactory());
+        super(pSocket, pServer.getIOFactory(), pServer.isCounterEnabled());
     
         mServer = pServer;
     }
@@ -68,8 +68,11 @@ public final class ServerHandler extends Handler
         boolean waiting = true;
         try {
             while (isRunning()) {
-                mCountOut.markCount();
-                mCountIn.markCount();
+                if (mCounterEnabled) {
+                    mCountOut.markCount();
+                    mCountIn.markCount();
+                }
+                
                 try {
                     waiting = true;
                     int code = mIn.read();
@@ -81,8 +84,10 @@ public final class ServerHandler extends Handler
                         handle(type);
                     }
                 } finally {
-                    if (TRACE) LOG.info("out=" + mCountOut.getMarkSize() + ", in=" + mCountIn.getMarkSize());
-                    mCounter.add(mCountOut.getCount(), mCountIn.getCount());
+                    if (mCounterEnabled) {
+                        if (TRACE) LOG.info("out=" + mCountOut.getMarkSize() + ", in=" + mCountIn.getMarkSize());
+                        mCounter.add(mCountOut.getCount(), mCountIn.getCount());
+                    }
                 }
             }
         } catch (Exception e) {
@@ -90,7 +95,9 @@ public final class ServerHandler extends Handler
                 LOG.error("handler failed", e);
             }
         } finally {
-            LOG.info("totalOut=" + mCounter.getOutBytes() + ", totalIn=" + mCounter.getInBytes() + ", calls=" + mCounter.getCalls());
+            if (mCounterEnabled) {
+                LOG.info("totalOut=" + mCounter.getOutBytes() + ", totalIn=" + mCounter.getInBytes() + ", calls=" + mCounter.getCalls());
+            }
             kill();
             free();
         }

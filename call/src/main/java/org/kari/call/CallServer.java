@@ -27,6 +27,7 @@ public final class CallServer extends Thread {
     
     private final CallInvoker mCallInvoker;
 
+    private final boolean mCounterEnabled;
     
     private volatile boolean mRunning = true;
     private ServerSocket mServer;
@@ -39,6 +40,7 @@ public final class CallServer extends Thread {
      * @param pIOFactory if null default is used
      * @param pRegistry If null new registry is created with default resolver
      * @param pCallInvoker null for default invoker
+     * @param pCounterEnabled Is counter stats collected
      */
     public CallServer(
             String pServerAddress,
@@ -46,7 +48,8 @@ public final class CallServer extends Thread {
             CallServerSocketFactory pSocketFactory,
             IOFactory pIOFactory,
             ServiceRegistry pRegistry,
-            CallInvoker pCallInvoker) 
+            CallInvoker pCallInvoker,
+            boolean pCounterEnabled) 
     {
         super("Server-" + pPort);
         
@@ -68,6 +71,8 @@ public final class CallServer extends Thread {
         mCallInvoker = pCallInvoker != null 
             ? pCallInvoker 
             : DefaultCallInvoker.INSTANCE;
+        
+        mCounterEnabled = pCounterEnabled;
     }
 
     public IOFactory getIOFactory() {
@@ -80,6 +85,10 @@ public final class CallServer extends Thread {
 
     public CallInvoker getCallInvoker() {
         return mCallInvoker;
+    }
+
+    public boolean isCounterEnabled() {
+        return mCounterEnabled;
     }
 
     public int getPort() {

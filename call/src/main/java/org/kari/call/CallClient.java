@@ -31,6 +31,7 @@ public final class CallClient {
     private final CallClientSocketFactory mSocketFactory;
     private final IOFactory mIOFactory;
     private final ServiceRegistry mRegistry;
+    private final boolean mCounterEnabled;
     
     /**
      * All instantiated handlers. Allow closing of connections even if they
@@ -55,13 +56,15 @@ public final class CallClient {
      * @param pSocketFactory if null default (plain socket) is used
      * @param pIOFactory if null default is used
      * @param pRegistry If null new registry is created with default resolver
+     * @param pCounterEnabled Is counter stats collected
      */
     public CallClient(
             String pServerAddress, 
             int pPort,
             CallClientSocketFactory pSocketFactory,
             IOFactory pIOFactory,
-            ServiceRegistry pRegistry) 
+            ServiceRegistry pRegistry,
+            boolean pCounterEnabled) 
     {
         mServerAddress = pServerAddress;
         mPort = pPort;
@@ -77,6 +80,8 @@ public final class CallClient {
         mRegistry = pRegistry != null
             ? pRegistry
             : new ServiceRegistry(null);
+        
+        mCounterEnabled = pCounterEnabled;
     }
 
     public String getServerAddress() {
@@ -93,6 +98,10 @@ public final class CallClient {
 
     public IOFactory getIOFactory() {
         return mIOFactory;
+    }
+
+    public boolean isCounterEnabled() {
+        return mCounterEnabled;
     }
 
     /**

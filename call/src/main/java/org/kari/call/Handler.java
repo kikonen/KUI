@@ -32,6 +32,7 @@ public abstract class Handler {
     
     protected final Socket mSocket;
     
+    protected final boolean mCounterEnabled;
     protected final CountOutputStream mCountOut;
     protected final CountInputStream mCountIn;
     
@@ -54,17 +55,30 @@ public abstract class Handler {
     
     protected Handler(
             Socket pSocket,
-            IOFactory pIOFactory) 
+            IOFactory pIOFactory,
+            boolean pCounterEnabled) 
         throws IOException 
     {
         mSocket = pSocket;
-        mCountOut = new CountOutputStream(mSocket.getOutputStream());
-        mCountIn = new CountInputStream(mSocket.getInputStream());
-        mIn = new DataInputStream(new BufferedInputStream(mCountIn));
-        mOut = new DataOutputStream(new BufferedOutputStream(mCountOut));
+        
+        mCounterEnabled = pCounterEnabled;
+        if (pCounterEnabled) {
+            mCountOut = new CountOutputStream(mSocket.getOutputStream());
+            mCountIn = new CountInputStream(mSocket.getInputStream());
+            mCounter = TransferCounter.INSTANCE;
+            
+            mIn = new DataInputStream(new BufferedInputStream(mCountIn));
+            mOut = new DataOutputStream(new BufferedOutputStream(mCountOut));
+        } else {
+            mCountOut = null;
+            mCountIn = null;
+            mCounter = null;
+            
+            mIn = new DataInputStream(new BufferedInputStream(mSocket.getInputStream()));
+            mOut = new DataOutputStream(new BufferedOutputStream(mSocket.getOutputStream()));
+        }
         
         mIOFactory = pIOFactory;
-        mCounter = TransferCounter.INSTANCE;
     }
     
     public void kill() {

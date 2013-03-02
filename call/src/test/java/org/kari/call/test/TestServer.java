@@ -22,6 +22,7 @@ import org.kari.call.io.CallServerSocketFactory;
 public final class TestServer {
     private static final Logger LOG = Logger.getLogger(CallConstants.BASE_PKG + ".test.server");
     private static final boolean TRACE = TestClient.TRACE;
+    private static final boolean COUNTER_ENABLED = TestClient.COUNTER_ENABLED;
     
     static final int PORT = 8100;
     
@@ -72,7 +73,8 @@ public final class TestServer {
                 mSocketFactory, 
                 new TestIOFactory(),
                 new ServiceRegistry(null),
-                mInvoker);
+                mInvoker,
+                COUNTER_ENABLED);
         
         server.getRegistry().register(new TestServiceImpl());
     

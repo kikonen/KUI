@@ -16,8 +16,12 @@ import org.kari.call.event.Result;
 public final class ClientHandler extends Handler {
     private static final Logger LOG = Logger.getLogger(CallConstants.BASE_PKG + ".client_handler");
     
-    public ClientHandler(Socket pSocket, CallClient pClient) throws IOException {
-        super(pSocket, pClient.getIOFactory());
+    public ClientHandler(
+            Socket pSocket, 
+            CallClient pClient) 
+        throws IOException 
+    {
+        super(pSocket, pClient.getIOFactory(), pClient.isCounterEnabled());
     }
     
     /**
@@ -33,8 +37,10 @@ public final class ClientHandler extends Handler {
         Result result;
 
         boolean acked = false;
-        mCountOut.markCount();
-        mCountIn.markCount();
+        if (mCounterEnabled) {
+            mCountOut.markCount();
+            mCountIn.markCount();
+        }
         try {
             resetByteOut();
             pCall.send(this, mOut);
@@ -62,8 +68,10 @@ public final class ClientHandler extends Handler {
                 throw new RetryCallException("Retry call", e);
             }
         } finally {
-            if (TRACE) LOG.info("out=" + mCountOut.getMarkSize() + ", in=" + mCountIn.getMarkSize());
-            mCounter.add(mCountOut.getCount(), mCountIn.getCount());
+            if (mCounterEnabled) {
+                if (TRACE) LOG.info("out=" + mCountOut.getMarkSize() + ", in=" + mCountIn.getMarkSize());
+                mCounter.add(mCountOut.getCount(), mCountIn.getCount());
+            }
             
             if (!mRunning) {
                 free();

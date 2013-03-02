@@ -20,6 +20,7 @@ import org.kari.call.io.CallClientSocketFactory;
 public final class TestClient {
     private static final Logger LOG = Logger.getLogger(CallConstants.BASE_PKG + ".test.client");
     public static final boolean TRACE = true;
+    public static final boolean COUNTER_ENABLED = false;
 
     
     public static void main(String[] args) {
@@ -64,7 +65,8 @@ public final class TestClient {
                 TestServer.PORT, 
                 mSocketFactory,
                 new TestIOFactory(),
-                new ServiceRegistry(null));
+                new ServiceRegistry(null),
+                COUNTER_ENABLED);
     
         TestService service = CallUtil.makeProxy(TestService.class,  client, mSessionProvider);
     

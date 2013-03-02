@@ -27,7 +27,10 @@ public final class ServerHandler extends Handler
 
     
     public ServerHandler(CallServer pServer, Socket pSocket) throws IOException {
-        super(pSocket, pServer.getIOFactory(), pServer.isCounterEnabled());
+        super(pSocket, 
+                pServer.getIOFactory(), 
+                pServer.isCounterEnabled(),
+                pServer.isReuseObjectStream());
     
         mServer = pServer;
     }
@@ -72,8 +75,10 @@ public final class ServerHandler extends Handler
                     mCountOut.markCount();
                     mCountIn.markCount();
                 }
-                
+
+                boolean success = false;
                 try {
+                    success = false;
                     waiting = true;
                     int code = mIn.read();
                     waiting = false;
@@ -83,10 +88,11 @@ public final class ServerHandler extends Handler
                         CallType type = CallType.resolve(code);
                         handle(type);
                     }
+                    success = true;
                 } finally {
-                    if (mCounterEnabled) {
+                    if (mCounterEnabled && success) {
                         if (TRACE) LOG.info("out=" + mCountOut.getMarkSize() + ", in=" + mCountIn.getMarkSize());
-                        mCounter.add(mCountOut.getCount(), mCountIn.getCount());
+                        mCounter.add(mCountOut.getMarkSize(), mCountIn.getMarkSize());
                     }
                 }
             }
@@ -96,7 +102,9 @@ public final class ServerHandler extends Handler
             }
         } finally {
             if (mCounterEnabled) {
-                LOG.info("totalOut=" + mCounter.getOutBytes() + ", totalIn=" + mCounter.getInBytes() + ", calls=" + mCounter.getCalls());
+                synchronized (mCounter) {
+                    LOG.info("totalOut=" + mCounter.getOutBytes() + ", totalIn=" + mCounter.getInBytes() + ", calls=" + mCounter.getCalls());
+                }
             }
             kill();
             free();

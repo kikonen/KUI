@@ -1,6 +1,5 @@
 package org.kari.call;
 
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Collect global statistics of transferred data for (in/out) for both
@@ -12,31 +11,40 @@ public final class TransferCounter {
     static final TransferCounter INSTANCE = new TransferCounter();
     
     
-    private final AtomicLong mOutBytes = new AtomicLong();
-    private final AtomicLong mInBytes = new AtomicLong();
-    private final AtomicLong mCalls = new AtomicLong();
+    private long mOutBytes;
+    private long mInBytes;
+    private long mCalls;
 
 
     public static TransferCounter getInstance() {
         return INSTANCE;
     }
 
-    public void add(long pOutBytes, long pInBytes) {
-        mOutBytes.addAndGet(pOutBytes);
-        mInBytes.addAndGet(pInBytes);
-        mCalls.incrementAndGet();
+    public synchronized void add(long pOutBytes, long pInBytes) {
+        mOutBytes += pOutBytes;
+        mInBytes += pInBytes;
+        mCalls++;
     }
     
+    /**
+     * <p>MUST sync to this externally
+     */
     public long getOutBytes() {
-        return mOutBytes.get();
+        return mOutBytes;
     }
     
+    /**
+     * <p>MUST sync to this externally
+     */
     public long getInBytes() {
-        return mInBytes.get();
+        return mInBytes;
     }
     
+    /**
+     * <p>MUST sync to this externally
+     */
     public long getCalls() {
-        return mCalls.get();
+        return mCalls;
     }
 }
 

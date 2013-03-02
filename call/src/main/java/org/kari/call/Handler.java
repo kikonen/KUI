@@ -61,7 +61,8 @@ public abstract class Handler {
     protected Handler(
             Socket pSocket,
             IOFactory pIOFactory,
-            boolean pCounterEnabled) 
+            boolean pCounterEnabled,
+            boolean pReuseObjectStream) 
         throws IOException 
     {
         mSocket = pSocket;
@@ -84,7 +85,7 @@ public abstract class Handler {
         }
         
         mIOFactory = pIOFactory;
-        mReuseObjectStream = true;
+        mReuseObjectStream = pReuseObjectStream;
     }
     
     public void kill() {

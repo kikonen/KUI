@@ -32,7 +32,8 @@ public final class CallClient {
     private final IOFactory mIOFactory;
     private final ServiceRegistry mRegistry;
     private final boolean mCounterEnabled;
-    
+    private final boolean mReuseObjectStream;
+
     /**
      * All instantiated handlers. Allow closing of connections even if they
      * were not returned back to pool properly
@@ -64,7 +65,8 @@ public final class CallClient {
             CallClientSocketFactory pSocketFactory,
             IOFactory pIOFactory,
             ServiceRegistry pRegistry,
-            boolean pCounterEnabled) 
+            boolean pCounterEnabled,
+            final boolean pReuseObjectStream) 
     {
         mServerAddress = pServerAddress;
         mPort = pPort;
@@ -82,6 +84,7 @@ public final class CallClient {
             : new ServiceRegistry(null);
         
         mCounterEnabled = pCounterEnabled;
+        mReuseObjectStream = pReuseObjectStream;
     }
 
     public String getServerAddress() {
@@ -102,6 +105,10 @@ public final class CallClient {
 
     public boolean isCounterEnabled() {
         return mCounterEnabled;
+    }
+    
+    public boolean isReuseObjectStream() {
+        return mReuseObjectStream;
     }
 
     /**

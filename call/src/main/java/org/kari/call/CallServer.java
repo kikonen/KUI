@@ -28,6 +28,7 @@ public final class CallServer extends Thread {
     private final CallInvoker mCallInvoker;
 
     private final boolean mCounterEnabled;
+    private final boolean mReuseObjectStream;
     
     private volatile boolean mRunning = true;
     private ServerSocket mServer;
@@ -49,7 +50,8 @@ public final class CallServer extends Thread {
             IOFactory pIOFactory,
             ServiceRegistry pRegistry,
             CallInvoker pCallInvoker,
-            boolean pCounterEnabled) 
+            boolean pCounterEnabled,
+            final boolean pReuseObjectStream) 
     {
         super("Server-" + pPort);
         
@@ -73,6 +75,7 @@ public final class CallServer extends Thread {
             : DefaultCallInvoker.INSTANCE;
         
         mCounterEnabled = pCounterEnabled;
+        mReuseObjectStream = pReuseObjectStream;
     }
 
     public IOFactory getIOFactory() {
@@ -89,6 +92,10 @@ public final class CallServer extends Thread {
 
     public boolean isCounterEnabled() {
         return mCounterEnabled;
+    }
+
+    public boolean isReuseObjectStream() {
+        return mReuseObjectStream;
     }
 
     public int getPort() {

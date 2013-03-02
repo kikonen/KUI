@@ -21,6 +21,7 @@ public final class TestClient {
     private static final Logger LOG = Logger.getLogger(CallConstants.BASE_PKG + ".test.client");
     public static final boolean TRACE = true;
     public static final boolean COUNTER_ENABLED = false;
+    public static final boolean REUSE_STREAM_ENABLED = true;
 
     
     public static void main(String[] args) {
@@ -66,7 +67,8 @@ public final class TestClient {
                 mSocketFactory,
                 new TestIOFactory(),
                 new ServiceRegistry(null),
-                COUNTER_ENABLED);
+                COUNTER_ENABLED,
+                REUSE_STREAM_ENABLED);
     
         TestService service = CallUtil.makeProxy(TestService.class,  client, mSessionProvider);
     

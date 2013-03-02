@@ -3,12 +3,11 @@ package org.kari.call.event;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.OutputStream;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.GZIPOutputStream;
+import java.util.zip.DataFormatException;
+import java.util.zip.Deflater;
+import java.util.zip.Inflater;
 
 import org.kari.call.CallType;
 import org.kari.call.Handler;
@@ -20,7 +19,11 @@ import org.kari.call.io.DirectByteArrayOutputStream;
  * @author kari
  */
 public final class BufferCall extends ServiceCall {
-    public static final int COMPRESS_THRESHOLD = 512;
+    private static final int COMPRESS_THRESHOLD = 500;
+    /**
+     * block size for socket read: MAX == 8192
+     */
+    private static final int READ_BLOCK_SIZE = 8192;
     
     /**
      * For decoding call
@@ -53,12 +56,11 @@ public final class BufferCall extends ServiceCall {
     protected void write(Handler pHandler, DataOutputStream pOut) 
         throws Exception
     {
-        DirectByteArrayOutputStream buffer = pHandler.getBuffer();
-        ObjectOutputStream oo = pHandler.getIOFactory().createObjectOutput(buffer, false);
-        write(oo);
+        ObjectOutputStream oo = pHandler.createObjectOut();
+        writeObjectOut(oo);
         oo.flush();
         
-        writeBuffer(buffer, pOut);
+        writeBuffer(pHandler, pOut);
     }
     
     @Override
@@ -66,53 +68,101 @@ public final class BufferCall extends ServiceCall {
         throws IOException,
             ClassNotFoundException
     {
-        ObjectInputStream oi = pHandler.getIOFactory().createObjectInput(
-                readBuffer(pHandler, pIn),
-                false);
-        
-        read(oi);
+        readObjectIn( readBuffer(pHandler, pIn) );
     }
 
+    /**
+     * Write contents of {@link Handler#getByteOut()} into pOut
+     */
     protected static void writeBuffer(
-            final DirectByteArrayOutputStream buffer,
+            final Handler pHandler,
             final DataOutputStream pOut)
             throws IOException 
     {
-        final int count = buffer.size();
-        final boolean compressed = count > BufferCall.COMPRESS_THRESHOLD;
+        final byte[] data;
+        final int totalCount;
+        {
+            final DirectByteArrayOutputStream bout = pHandler.getByteOut();
+            data = bout.getBuffer();
+            totalCount = bout.size();
+        }
+        
+        final boolean compressed = totalCount > BufferCall.COMPRESS_THRESHOLD;
         
         pOut.writeBoolean(compressed);
         
-        OutputStream out = pOut;
         if (compressed) {
-            out = new GZIPOutputStream(out, true);
-        }
-
-        out.write(buffer.getBuffer(), 0, count);
-
-        // ensure GZIP is properly finished
-        if (compressed) {
-            out.flush();
+            pOut.writeInt(totalCount);
+            
+            final Deflater deflater = pHandler.getDeflater();
+            final byte[] writeBuffer = pHandler.getDataBuffer();
+            
+            deflater.setInput(data, 0,  totalCount);
+            deflater.finish();
+            
+            while (!deflater.finished()) {
+                int count = deflater.deflate(writeBuffer, 0, writeBuffer.length);
+                if (count > 0) {
+                    pOut.write(writeBuffer, 0, count);
+                }
+            }
+            deflater.reset();
+        } else {
+            pOut.write(data, 0, totalCount);
         }
     }
 
     /**
      * Read data from pIn to buffer
      */
-    protected static InputStream readBuffer(
-            Handler pHandler,
-            DataInputStream pIn) 
-        throws IOException 
+    protected static ObjectInputStream readBuffer(
+            final Handler pHandler,
+            final DataInputStream pIn) 
+        throws IOException
     {
-        boolean compressed = pIn.readBoolean();
+        ObjectInputStream result;
+        
+        final boolean compressed = pIn.readBoolean();
+        
 
-        // read data
-        InputStream in = pIn;
         if (compressed) {
-            in = new GZIPInputStream(in);
-        }
+            final int totalCount = pIn.readInt();
+            
+            final byte[] data = pHandler.prepareByteOut(totalCount);
+            final byte[] readBuffer = pHandler.getDataBuffer();
+            final Inflater inflater = pHandler.getInflater();
+            
+            int offset = 0;
+            int remaining = totalCount;
+            while (remaining > 0) {
+                if (inflater.needsInput()) {
+                    final int readCount = pIn.read(
+                            readBuffer, 
+                            0, 
+                            Math.min(
+                                    READ_BLOCK_SIZE, 
+                                    Math.min(totalCount, readBuffer.length)));
+                    inflater.setInput(readBuffer, 0, readCount);
+                }
+                
+                try {
+                    int writeCount = inflater.inflate(data, offset, Math.min(10, totalCount - offset));
+                    offset += writeCount;
+                    remaining -= writeCount;
+                } catch (DataFormatException e) {
+                    throw new IOException(e);
+                }
+                
+            }
+            inflater.reset();
+            
 
-        return in;
+            result = pHandler.createObjectIn(totalCount);
+        } else {
+            result = pHandler.getIOFactory().createObjectInput(pIn, false);
+        }
+        
+        return result;
     }
 
     @Override

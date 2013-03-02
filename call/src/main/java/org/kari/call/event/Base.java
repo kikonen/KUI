@@ -61,7 +61,7 @@ public abstract class Base {
     public final void send(Handler pHandler, DataOutputStream pOut) 
         throws Exception
     {
-        pHandler.getBuffer().reset();
+        pHandler.getByteOut().reset();
         
         pOut.write(getType().mCode);
         write(pHandler, pOut);
@@ -75,7 +75,6 @@ public abstract class Base {
     public final void receive(Handler pHandler, DataInputStream pIn) 
         throws Exception
     {
-        pHandler.getBuffer().reset();
         read(pHandler, pIn);
     }
     

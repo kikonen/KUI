@@ -141,6 +141,7 @@ public final class CallClient {
     public synchronized void release(ClientHandler pHandler) {
         if (mPending.contains(pHandler)) {
             pHandler.kill();
+            pHandler.free();
             mPending.remove(pHandler);
         }
         
@@ -149,6 +150,7 @@ public final class CallClient {
         } else {
             // ensure socket is properly closed
             pHandler.kill();
+            pHandler.free();
             mHandlers.remove(pHandler);
         }
     }
@@ -168,6 +170,7 @@ public final class CallClient {
     public synchronized void closeHandlers(boolean pForceKill) {
         for (ClientHandler handler : mAvailable) {
             handler.kill();
+            handler.free();
         }
         mHandlers.removeAll(mAvailable);
         mPending.removeAll(mAvailable);

@@ -90,7 +90,9 @@ public final class ServerHandler extends Handler
                 LOG.error("handler failed", e);
             }
         } finally {
+            LOG.info("totalOut=" + mCounter.getOutBytes() + ", totalIn=" + mCounter.getInBytes() + ", calls=" + mCounter.getCalls());
             kill();
+            free();
         }
     }
 
@@ -113,7 +115,7 @@ public final class ServerHandler extends Handler
             boolean received = false;
             boolean acked = false;
             try {
-                resetBuffer();
+                resetByteOut();
                 call.receive(this, mIn);
                 mLastSessionId = call.getSessionId();
                 received = true;

@@ -52,7 +52,7 @@ public final class StreamCall extends ServiceCall {
         throws Exception
     {
         ObjectOutputStream oo = pHandler.getIOFactory().createObjectOutput(pOut, COMPRESS);
-        write(oo);
+        writeObjectOut(oo);
         oo.flush();
     }
 
@@ -62,7 +62,7 @@ public final class StreamCall extends ServiceCall {
             ClassNotFoundException
     {
         ObjectInputStream oi = pHandler.getIOFactory().createObjectInput(pIn, COMPRESS);
-        read(oi);
+        readObjectIn(oi);
     }
     
     @Override

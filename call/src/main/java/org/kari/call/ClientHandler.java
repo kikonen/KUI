@@ -36,7 +36,7 @@ public final class ClientHandler extends Handler {
         mCountOut.markCount();
         mCountIn.markCount();
         try {
-            resetBuffer();
+            resetByteOut();
             pCall.send(this, mOut);
             
             // handle ack
@@ -64,6 +64,10 @@ public final class ClientHandler extends Handler {
         } finally {
             if (TRACE) LOG.info("out=" + mCountOut.getMarkSize() + ", in=" + mCountIn.getMarkSize());
             mCounter.add(mCountOut.getCount(), mCountIn.getCount());
+            
+            if (!mRunning) {
+                free();
+            }
         }
         
         return result.getResult();

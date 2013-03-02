@@ -80,7 +80,7 @@ public abstract class ServiceCall extends Call {
     /**
      * Standard write logic for service call
      */
-    protected final void write(ObjectOutputStream pOut) 
+    protected final void writeObjectOut(ObjectOutputStream pOut) 
         throws Exception
     {
         pOut.writeInt(mServiceUUID);
@@ -103,7 +103,7 @@ public abstract class ServiceCall extends Call {
     /**
      * Standard read logic for service call
      */
-    protected final void read(ObjectInputStream pIn) 
+    protected final void readObjectIn(ObjectInputStream pIn) 
         throws IOException,
             ClassNotFoundException
     {

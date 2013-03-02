@@ -14,6 +14,7 @@ public final class TransferCounter {
     
     private final AtomicLong mOutBytes = new AtomicLong();
     private final AtomicLong mInBytes = new AtomicLong();
+    private final AtomicLong mCalls = new AtomicLong();
 
 
     public static TransferCounter getInstance() {
@@ -23,6 +24,7 @@ public final class TransferCounter {
     public void add(long pOutBytes, long pInBytes) {
         mOutBytes.addAndGet(pOutBytes);
         mInBytes.addAndGet(pInBytes);
+        mCalls.incrementAndGet();
     }
     
     public long getOutBytes() {
@@ -31,6 +33,10 @@ public final class TransferCounter {
     
     public long getInBytes() {
         return mInBytes.get();
+    }
+    
+    public long getCalls() {
+        return mCalls.get();
     }
 }
 

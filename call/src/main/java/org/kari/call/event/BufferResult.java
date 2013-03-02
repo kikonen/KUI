@@ -8,15 +8,14 @@ import java.io.ObjectOutputStream;
 
 import org.kari.call.CallType;
 import org.kari.call.Handler;
-import org.kari.call.io.DirectByteArrayOutputStream;
 
 /**
  * Result based into intermediate buffer use
  *
  * @author kari
  */
-public final class BufferResult extends Result {
-    private Object mResult;
+public class BufferResult extends Result {
+    protected Object mResult;
  
     /**
      * For decoding result
@@ -36,7 +35,9 @@ public final class BufferResult extends Result {
     }
 
     @Override
-    public Object getResult() {
+    public Object getResult() 
+        throws Throwable
+    {
         return mResult;
     }
 
@@ -44,13 +45,11 @@ public final class BufferResult extends Result {
     protected void write(Handler pHandler, DataOutputStream pOut)
         throws Exception 
     {
-        DirectByteArrayOutputStream buffer = pHandler.getBuffer();
-        
-        ObjectOutputStream oo = pHandler.getIOFactory().createObjectOutput(buffer, false);
+        ObjectOutputStream oo = pHandler.createObjectOut();
         oo.writeObject(mResult);
         oo.flush();
-
-        BufferCall.writeBuffer(buffer, pOut);
+        
+        BufferCall.writeBuffer(pHandler, pOut);
     }
 
     @Override
@@ -59,13 +58,8 @@ public final class BufferResult extends Result {
             IOException, 
             ClassNotFoundException 
     {
-        ObjectInputStream oi = pHandler.getIOFactory().createObjectInput(
-                BufferCall.readBuffer(pHandler, pIn),
-                false);
-        
+        ObjectInputStream oi = BufferCall.readBuffer(pHandler, pIn);
         mResult = oi.readObject();
-        
     }
-
 
 }

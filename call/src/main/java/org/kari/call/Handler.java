@@ -5,11 +5,16 @@ import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.util.zip.Deflater;
+import java.util.zip.Inflater;
 
 import org.apache.log4j.Logger;
 import org.kari.call.io.CountInputStream;
 import org.kari.call.io.CountOutputStream;
+import org.kari.call.io.DirectByteArrayInputStream;
 import org.kari.call.io.DirectByteArrayOutputStream;
 import org.kari.call.io.IOFactory;
 
@@ -20,8 +25,11 @@ import org.kari.call.io.IOFactory;
  */
 public abstract class Handler {
     private static final Logger LOG = Logger.getLogger(CallConstants.BASE_PKG + ".handler");
+    private static final int BUFFER_SIZE = 8192;
+    static final int COMPRESSION_LEVEL = Deflater.DEFAULT_COMPRESSION;
     static final boolean TRACE = false;
 
+    
     protected final Socket mSocket;
     
     protected final CountOutputStream mCountOut;
@@ -34,9 +42,13 @@ public abstract class Handler {
     
     protected final TransferCounter mCounter;
 
-    private DirectByteArrayOutputStream mBuffer;
+    private DirectByteArrayOutputStream mByteOut;
+    private DirectByteArrayInputStream mInBuffer;
     private byte[] mDataBuffer;
-
+    
+    private Deflater mDeflater;
+    private Inflater mInflater;
+    
     protected volatile boolean mRunning = true;
 
     
@@ -58,6 +70,19 @@ public abstract class Handler {
     public void kill() {
         mRunning = false;
         CallUtil.closeSocket(mSocket);
+        free();
+    }
+
+    /**
+     * Free resources
+     */
+    protected void free() {
+        if (mInflater != null) {
+            mInflater.end();
+        }
+        if (mDeflater != null) {
+            mDeflater.end();
+        }
     }
     
     public boolean isRunning() {
@@ -70,21 +95,52 @@ public abstract class Handler {
 
     /**
      * Get reused encoding buffer
+     * 
+     * @see #getObjectOut()
      */
-    public final DirectByteArrayOutputStream getBuffer() {
-        if (mBuffer == null) {
-            mBuffer = new DirectByteArrayOutputStream();
+    public final DirectByteArrayOutputStream getByteOut() {
+        if (mByteOut == null) {
+            mByteOut = new DirectByteArrayOutputStream();
         }
-        return mBuffer;
+        return mByteOut;
     }
 
     /**
      * Reset encoding buffer, if buffer is allocated
      */
-    public final void resetBuffer() {
-        if (mBuffer != null) {
-            mBuffer.reset();
+    public final void resetByteOut() {
+        if (mByteOut != null) {
+            mByteOut.reset();
         }
+    }
+
+    /**
+     * Prepare {@link #getByteOut()} for writing pCount data
+     * 
+     * @return direct reference to {@link #getByteOut()} buffer with
+     * ensure pCount capasity
+     */
+    public final byte[] prepareByteOut(int pCount) {
+        final DirectByteArrayOutputStream out = getByteOut();
+    
+        final byte[] data = getDataBuffer();
+        while (out.getBuffer().length < pCount) {
+            out.write(data, 0, data.length);
+        }
+        
+        return out.getBuffer();
+    }
+
+    /**
+     * Reused wrapper for {@link #getByteOut()} used when reading data
+     * 
+     * @see #getObjectIn()
+     */
+    private final DirectByteArrayInputStream getByteIn() {
+        if (mInBuffer == null) {
+            mInBuffer = new DirectByteArrayInputStream();
+        }
+        return mInBuffer;
     }
 
     /**
@@ -92,10 +148,46 @@ public abstract class Handler {
      */
     public final byte[] getDataBuffer() {
         if (mDataBuffer == null) {
-            mDataBuffer = new byte[4096];
+            mDataBuffer = new byte[BUFFER_SIZE];
         }
         return mDataBuffer;
     }
 
+    public Deflater getDeflater() {
+        if (mDeflater == null) {
+            mDeflater = new Deflater(COMPRESSION_LEVEL, true);
+        }
+        return mDeflater;
+    }
+
+    public Inflater getInflater() {
+        if (mInflater == null) {
+            mInflater = new Inflater(true);
+        }
+        return mInflater; 
+    }
+
+    /**
+     * @return ObjectOutput around {@link #getByteOut()}
+     */
+    public ObjectOutputStream createObjectOut()
+        throws IOException 
+    {
+        return mIOFactory.createObjectOutput(getByteOut(), false);
+    }
+    
+    /**
+     * @return ObjectOutput around {@link #getByteIn()}
+     */
+    public ObjectInputStream createObjectIn(int pCount)
+        throws IOException 
+    {
+        // wrap data in "write" buffer into "read" buffer
+        DirectByteArrayInputStream bin = getByteIn();
+        bin.reset();
+        bin.set(mByteOut.getBuffer(), 0, pCount);
+
+        return mIOFactory.createObjectInput(getByteIn(), false);
+    }
 
 }

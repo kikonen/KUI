@@ -47,7 +47,7 @@ public class BufferResult extends Result {
     {
         ObjectOutputStream oo = pHandler.createObjectOut();
         oo.writeObject(mResult);
-        oo.flush();
+        pHandler.finishObjectOut(oo);
         
         BufferCall.writeBuffer(pHandler, pOut);
     }
@@ -60,6 +60,7 @@ public class BufferResult extends Result {
     {
         ObjectInputStream oi = BufferCall.readBuffer(pHandler, pIn);
         mResult = oi.readObject();
+        pHandler.finishObjectIn(oi);
     }
 
 }

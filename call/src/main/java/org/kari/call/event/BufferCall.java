@@ -58,7 +58,7 @@ public final class BufferCall extends ServiceCall {
     {
         ObjectOutputStream oo = pHandler.createObjectOut();
         writeObjectOut(oo);
-        oo.flush();
+        pHandler.finishObjectOut(oo);
         
         writeBuffer(pHandler, pOut);
     }
@@ -68,7 +68,9 @@ public final class BufferCall extends ServiceCall {
         throws IOException,
             ClassNotFoundException
     {
-        readObjectIn( readBuffer(pHandler, pIn) );
+        ObjectInputStream oi = readBuffer(pHandler, pIn);
+        readObjectIn( oi );
+        pHandler.finishObjectIn(oi);
     }
 
     /**
@@ -108,6 +110,9 @@ public final class BufferCall extends ServiceCall {
             }
             deflater.reset();
         } else {
+            if (pHandler.isReuseObjectStream()) {
+                pOut.writeInt(totalCount);
+            }
             pOut.write(data, 0, totalCount);
         }
     }
@@ -136,13 +141,13 @@ public final class BufferCall extends ServiceCall {
             int remaining = totalCount;
             while (remaining > 0) {
                 if (inflater.needsInput()) {
-                    final int readCount = pIn.read(
+                    final int count = pIn.read(
                             readBuffer, 
                             0, 
                             Math.min(
                                     READ_BLOCK_SIZE, 
                                     Math.min(totalCount, readBuffer.length)));
-                    inflater.setInput(readBuffer, 0, readCount);
+                    inflater.setInput(readBuffer, 0, count);
                 }
                 
                 try {
@@ -159,7 +164,26 @@ public final class BufferCall extends ServiceCall {
 
             result = pHandler.createObjectIn(totalCount);
         } else {
-            result = pHandler.getIOFactory().createObjectInput(pIn, false);
+            if (pHandler.isReuseObjectStream()) {
+                final int totalCount = pIn.readInt();
+                final byte[] data = pHandler.prepareByteOut(totalCount);
+                
+                int remaining = totalCount;
+                int offset = 0;
+                while (remaining > 0) {
+                    final int count = pIn.read(
+                            data, 
+                            offset, 
+                            Math.min(READ_BLOCK_SIZE, totalCount - offset));
+                    if (count > 0) {
+                        remaining -= count;
+                        offset += count;
+                    }
+                }
+                result = pHandler.createObjectIn(totalCount);
+            } else {
+                result = pHandler.getIOFactory().createObjectInput(pIn, false);
+            }
         }
         
         return result;

@@ -28,7 +28,7 @@ public abstract class Handler {
     private static final int BUFFER_SIZE = 8192;
     static final int COMPRESSION_LEVEL = Deflater.DEFAULT_COMPRESSION;
     static final boolean TRACE = false;
-
+    static final byte MAGIC_VALUE = -2;
     
     protected final Socket mSocket;
     
@@ -44,11 +44,16 @@ public abstract class Handler {
     protected final TransferCounter mCounter;
 
     private DirectByteArrayOutputStream mByteOut;
-    private DirectByteArrayInputStream mInBuffer;
+    private DirectByteArrayInputStream mByteIn;
     private byte[] mDataBuffer;
     
     private Deflater mDeflater;
     private Inflater mInflater;
+
+    private final boolean mReuseObjectStream;
+    
+    private ObjectOutputStream mByteObjectOut;
+    private ObjectInputStream mByteObjectIn;
     
     protected volatile boolean mRunning = true;
 
@@ -79,6 +84,7 @@ public abstract class Handler {
         }
         
         mIOFactory = pIOFactory;
+        mReuseObjectStream = true;
     }
     
     public void kill() {
@@ -105,6 +111,10 @@ public abstract class Handler {
     
     public IOFactory getIOFactory() {
         return mIOFactory;
+    }
+
+    public boolean isReuseObjectStream() {
+        return mReuseObjectStream;
     }
 
     /**
@@ -151,10 +161,10 @@ public abstract class Handler {
      * @see #getObjectIn()
      */
     private final DirectByteArrayInputStream getByteIn() {
-        if (mInBuffer == null) {
-            mInBuffer = new DirectByteArrayInputStream();
+        if (mByteIn == null) {
+            mByteIn = new DirectByteArrayInputStream();
         }
-        return mInBuffer;
+        return mByteIn;
     }
 
     /**
@@ -187,7 +197,9 @@ public abstract class Handler {
     public ObjectOutputStream createObjectOut()
         throws IOException 
     {
-        return mIOFactory.createObjectOutput(getByteOut(), false);
+        return mReuseObjectStream 
+            ? getByteObjectOut()
+            : mIOFactory.createObjectOutput(getByteOut(), false);
     }
     
     /**
@@ -201,7 +213,57 @@ public abstract class Handler {
         bin.reset();
         bin.set(mByteOut.getBuffer(), 0, pCount);
 
-        return mIOFactory.createObjectInput(getByteIn(), false);
+        return mReuseObjectStream
+            ? getByteObjectIn()
+            : mIOFactory.createObjectInput(getByteIn(), false);
+    }
+
+    /**
+     * Reused stream bound into {@link #getByteOut()}
+     */
+    public ObjectOutputStream getByteObjectOut() 
+        throws IOException
+    {
+        if (mByteObjectOut == null) {
+            mByteObjectOut = mIOFactory.createObjectOutput(getByteOut(), false);
+        }
+        return mByteObjectOut;
+    }
+
+    /**
+     * Reused stream bound into {@link #getByteIn()}
+     */
+    public ObjectInputStream getByteObjectIn() 
+        throws IOException
+    {
+        if (mByteObjectIn == null) {
+            mByteObjectIn = mIOFactory.createObjectInput(getByteIn(), false);
+        }
+        return mByteObjectIn;
+    }
+
+    public void finishObjectOut(ObjectOutputStream pOut)
+        throws IOException 
+    {
+        if (mReuseObjectStream) {
+            pOut.reset();
+            // reset won't work unless there is some data after it
+            pOut.writeByte(MAGIC_VALUE);
+        }
+        pOut.flush();
+    }
+    
+    public void finishObjectIn(ObjectInputStream pIn)
+        throws IOException 
+    {
+        // consume TC_RESET
+        if (mReuseObjectStream) {
+            // consume MAGIC_VALUE from stream
+            byte data = pIn.readByte();
+            if (data != MAGIC_VALUE) {
+                throw new IOException("corrupted stream");
+            }
+        }
     }
 
 }

@@ -127,6 +127,9 @@ public final class CallHandler implements InvocationHandler {
         if (id == null) {
             if (mMethods.isEmpty()) {
                 TShortObjectMap<Method> methods = mClient.getRegistry().getResolver().resolveMethods(mService);
+                if (methods == null) {
+                    methods = DefaultIdResolver.INSTANCE.resolveMethods(mService);
+                }
                 
                 methods.forEachEntry(new TShortObjectProcedure<Method>() {
                     @Override

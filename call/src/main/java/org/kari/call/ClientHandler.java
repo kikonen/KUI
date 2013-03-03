@@ -16,6 +16,9 @@ import org.kari.call.event.Result;
 public final class ClientHandler extends Handler {
     private static final Logger LOG = Logger.getLogger(CallConstants.BASE_PKG + ".client_handler");
     
+    private Object mLastSessionId;
+    
+
     public ClientHandler(
             Socket pSocket, 
             CallClient pClient) 
@@ -28,6 +31,14 @@ public final class ClientHandler extends Handler {
                 pClient.getCallCompressThreshold());
     }
     
+    public Object getLastSessionId() {
+        return mLastSessionId;
+    }
+
+    public void setLastSessionId(Object pLastSessionId) {
+        mLastSessionId = pLastSessionId;
+    }
+
     /**
      * Invoke call, retrying call is upto caller
      * 

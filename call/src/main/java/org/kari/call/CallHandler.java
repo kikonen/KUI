@@ -39,8 +39,6 @@ public final class CallHandler implements InvocationHandler {
 
     private final TObjectShortMap<Method> mMethods = new TObjectShortHashMap<Method>();
 
-    private Object mLastSessionId;
-    
     
     public CallHandler(
             Class<? extends Remote> pService,
@@ -80,8 +78,8 @@ public final class CallHandler implements InvocationHandler {
             ClientHandler handler = mClient.reserve();
             try {
                 Object sessionId = mSessionProvider.getSessionId();
-                boolean sessionIdChanged = sessionId != mLastSessionId;
-                mLastSessionId = sessionId;
+                boolean sessionIdChanged = sessionId != handler.getLastSessionId();
+                handler.setLastSessionId(sessionId);
                 
                 Call call;
                 if (Base.BUFFER_CALL) {

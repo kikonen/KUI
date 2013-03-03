@@ -10,6 +10,7 @@ import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 
 import org.kari.call.CallType;
+import org.kari.call.CallUtil;
 import org.kari.call.Handler;
 import org.kari.call.io.DirectByteArrayOutputStream;
 
@@ -94,7 +95,7 @@ public final class BufferCall extends ServiceCall {
         pOut.writeBoolean(compressed);
         
         if (compressed) {
-            pOut.writeInt(totalCount);
+            CallUtil.writeCompactInt(pOut, totalCount);
             
             final Deflater deflater = pHandler.getDeflater();
             final byte[] writeBuffer = pHandler.getDataBuffer();
@@ -111,7 +112,7 @@ public final class BufferCall extends ServiceCall {
             deflater.reset();
         } else {
             if (pHandler.isReuseObjectStream()) {
-                pOut.writeInt(totalCount);
+                CallUtil.writeCompactInt(pOut, totalCount);
             }
             pOut.write(data, 0, totalCount);
         }
@@ -131,7 +132,7 @@ public final class BufferCall extends ServiceCall {
         
 
         if (compressed) {
-            final int totalCount = pIn.readInt();
+            final int totalCount = CallUtil.readCompactInt(pIn);
             
             final byte[] data = pHandler.prepareByteOut(totalCount);
             final byte[] readBuffer = pHandler.getDataBuffer();
@@ -165,7 +166,7 @@ public final class BufferCall extends ServiceCall {
             result = pHandler.createObjectIn(totalCount);
         } else {
             if (pHandler.isReuseObjectStream()) {
-                final int totalCount = pIn.readInt();
+                final int totalCount = CallUtil.readCompactInt(pIn);
                 final byte[] data = pHandler.prepareByteOut(totalCount);
                 
                 int remaining = totalCount;

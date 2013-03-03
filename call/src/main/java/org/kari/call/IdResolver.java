@@ -8,7 +8,7 @@ import java.rmi.Remote;
 public interface IdResolver {
     /**
      * Resolve ids for methods in service. Ids are unique within pService. 
-     * 0 is not allowed as id.
+     * Method ids must be positive values (i.e. "id > 0").
      * 
      * @return null to use builtin default logic
      */

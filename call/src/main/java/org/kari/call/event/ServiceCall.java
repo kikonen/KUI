@@ -8,6 +8,7 @@ import java.lang.reflect.Method;
 import java.rmi.Remote;
 
 import org.kari.call.CallInvoker;
+import org.kari.call.CallUtil;
 import org.kari.call.RemoteMethodNotFoundException;
 import org.kari.call.ServiceRegistry;
 
@@ -84,7 +85,7 @@ public abstract class ServiceCall extends Call {
         throws Exception
     {
         pOut.writeShort(mServiceUUID);
-        pOut.writeShort(mMethodId);
+        CallUtil.writeCompactInt(pOut, mMethodId);
         
         byte code = (byte)(mParams != null ? mParams.length : 0);
         if (mSessionIdChanged) {
@@ -113,7 +114,7 @@ public abstract class ServiceCall extends Call {
             ClassNotFoundException
     {
         mServiceUUID = pIn.readShort();
-        mMethodId = pIn.readShort();
+        mMethodId = (short)CallUtil.readCompactInt(pIn);
 
         int count;
         {

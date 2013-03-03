@@ -19,7 +19,9 @@ public final class ServerHandler extends Handler
         Runnable
 {
     private static final Logger LOG = Logger.getLogger(CallConstants.BASE_PKG + ".server_handler");
-
+    private static final int PROTOCOL_STACK_SKIP = 2;
+    private static final int INVOKE_STACK_SKIP = 3;
+    
     private final CallServer mServer;
     
     private Thread mThread;
@@ -120,7 +122,7 @@ public final class ServerHandler extends Handler
             call = (Call)pType.create();
             call.setSessionId(mLastSessionId);
         } catch (Throwable e) {
-            result = new ErrorResult(e);
+            result = new ErrorResult(e, PROTOCOL_STACK_SKIP);
             // cleanup by enforcing socket re-create; state unrecoversable
             // since it's not possible to know how to read data for unsupported
             // protocol
@@ -136,7 +138,7 @@ public final class ServerHandler extends Handler
                 mLastSessionId = call.getSessionId();
                 received = true;
             } catch (Throwable e) {
-                result = new ErrorResult(e);
+                result = new ErrorResult(e, PROTOCOL_STACK_SKIP);
                 // socket has failed or major internal error
                 // => Attempt to send error to client and die
                 suicide = true;
@@ -147,7 +149,7 @@ public final class ServerHandler extends Handler
                     AckCallReceived.INSTANCE.send(this, mOut);
                     acked = true;
                 } catch (Throwable e) {
-                    result = new ErrorResult(e);
+                    result = new ErrorResult(e, PROTOCOL_STACK_SKIP);
                     // Socket may be unstable; restart
                     suicide = true;
                 }
@@ -160,7 +162,7 @@ public final class ServerHandler extends Handler
                             mServer.getRegistry(),
                             mServer.getCallInvoker());
                 } catch (Throwable e) {
-                    result = new ErrorResult(e);
+                    result = new ErrorResult(e, INVOKE_STACK_SKIP);
                     // normal call failure
                 }
             }

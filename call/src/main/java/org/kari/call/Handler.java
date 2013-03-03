@@ -35,13 +35,15 @@ public abstract class Handler {
     protected final boolean mCounterEnabled;
     protected final CountOutputStream mCountOut;
     protected final CountInputStream mCountIn;
+    protected final TransferCounter mCounter;
     
     protected final DataInputStream mIn;
     protected final DataOutputStream mOut;
 
     protected final IOFactory mIOFactory;
     
-    protected final TransferCounter mCounter;
+    private final boolean mReuseObjectStream;
+    private final int mCompressThreshold;
 
     private DirectByteArrayOutputStream mByteOut;
     private DirectByteArrayInputStream mByteIn;
@@ -50,7 +52,6 @@ public abstract class Handler {
     private Deflater mDeflater;
     private Inflater mInflater;
 
-    private final boolean mReuseObjectStream;
     
     private ObjectOutputStream mByteObjectOut;
     private ObjectInputStream mByteObjectIn;
@@ -59,10 +60,11 @@ public abstract class Handler {
 
     
     protected Handler(
-            Socket pSocket,
-            IOFactory pIOFactory,
-            boolean pCounterEnabled,
-            boolean pReuseObjectStream) 
+            final Socket pSocket,
+            final IOFactory pIOFactory,
+            final boolean pCounterEnabled,
+            final boolean pReuseObjectStream,
+            final int pCompressThreshold) 
         throws IOException 
     {
         mSocket = pSocket;
@@ -86,6 +88,8 @@ public abstract class Handler {
         
         mIOFactory = pIOFactory;
         mReuseObjectStream = pReuseObjectStream;
+        
+        mCompressThreshold = pCompressThreshold;
     }
     
     public void kill() {
@@ -97,7 +101,7 @@ public abstract class Handler {
     /**
      * Free resources
      */
-    protected void free() {
+    protected final void free() {
         if (mInflater != null) {
             mInflater.end();
         }
@@ -110,12 +114,19 @@ public abstract class Handler {
         return mRunning && !mSocket.isClosed();
     }
     
-    public IOFactory getIOFactory() {
+    public final IOFactory getIOFactory() {
         return mIOFactory;
     }
 
-    public boolean isReuseObjectStream() {
+    public final boolean isReuseObjectStream() {
         return mReuseObjectStream;
+    }
+
+    /**
+     * Get call (client side) or result (server side) compress threshold
+     */
+    public final int getCompressThreshold() {
+        return mCompressThreshold;
     }
 
     /**
@@ -178,14 +189,14 @@ public abstract class Handler {
         return mDataBuffer;
     }
 
-    public Deflater getDeflater() {
+    public final Deflater getDeflater() {
         if (mDeflater == null) {
             mDeflater = new Deflater(COMPRESSION_LEVEL, true);
         }
         return mDeflater;
     }
 
-    public Inflater getInflater() {
+    public final Inflater getInflater() {
         if (mInflater == null) {
             mInflater = new Inflater(true);
         }
@@ -195,7 +206,7 @@ public abstract class Handler {
     /**
      * @return ObjectOutput around {@link #getByteOut()}
      */
-    public ObjectOutputStream createObjectOut()
+    public final ObjectOutputStream createObjectOut()
         throws IOException 
     {
         return mReuseObjectStream 
@@ -206,7 +217,7 @@ public abstract class Handler {
     /**
      * @return ObjectOutput around {@link #getByteIn()}
      */
-    public ObjectInputStream createObjectIn(int pCount)
+    public final ObjectInputStream createObjectIn(int pCount)
         throws IOException 
     {
         // wrap data in "write" buffer into "read" buffer
@@ -222,7 +233,7 @@ public abstract class Handler {
     /**
      * Reused stream bound into {@link #getByteOut()}
      */
-    public ObjectOutputStream getByteObjectOut() 
+    public final ObjectOutputStream getByteObjectOut() 
         throws IOException
     {
         if (mByteObjectOut == null) {
@@ -234,7 +245,7 @@ public abstract class Handler {
     /**
      * Reused stream bound into {@link #getByteIn()}
      */
-    public ObjectInputStream getByteObjectIn() 
+    public final ObjectInputStream getByteObjectIn() 
         throws IOException
     {
         if (mByteObjectIn == null) {
@@ -243,7 +254,7 @@ public abstract class Handler {
         return mByteObjectIn;
     }
 
-    public void finishObjectOut(ObjectOutputStream pOut)
+    public final void finishObjectOut(ObjectOutputStream pOut)
         throws IOException 
     {
         if (mReuseObjectStream) {
@@ -254,7 +265,7 @@ public abstract class Handler {
         pOut.flush();
     }
     
-    public void finishObjectIn(ObjectInputStream pIn)
+    public final void finishObjectIn(ObjectInputStream pIn)
         throws IOException 
     {
         // consume TC_RESET

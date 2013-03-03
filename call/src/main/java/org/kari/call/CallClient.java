@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
+import org.kari.call.event.BufferCall;
 import org.kari.call.io.CallClientSocketFactory;
 import org.kari.call.io.DefaultCallClientSocketFactory;
 import org.kari.call.io.IOFactory;
@@ -33,6 +34,7 @@ public final class CallClient {
     private final ServiceRegistry mRegistry;
     private final boolean mCounterEnabled;
     private final boolean mReuseObjectStream;
+    private final int mCallCompressThreshold;
 
     /**
      * All instantiated handlers. Allow closing of connections even if they
@@ -58,15 +60,20 @@ public final class CallClient {
      * @param pIOFactory if null default is used
      * @param pRegistry If null new registry is created with default resolver
      * @param pCounterEnabled Is counter stats collected
+     * @param pReuseObjectStream If true framework reuses Object IO streams
+     * created via IOFactory
+     * @param pCallCompressThreshold Threshold in bytes for buffer call compression.
+     * Use -1 to use default threshold, 0 for always and Integer.MAX_VALUE for never.
      */
     public CallClient(
-            String pServerAddress, 
-            int pPort,
-            CallClientSocketFactory pSocketFactory,
-            IOFactory pIOFactory,
-            ServiceRegistry pRegistry,
-            boolean pCounterEnabled,
-            final boolean pReuseObjectStream) 
+            final String pServerAddress, 
+            final int pPort,
+            final CallClientSocketFactory pSocketFactory,
+            final IOFactory pIOFactory,
+            final ServiceRegistry pRegistry,
+            final boolean pCounterEnabled,
+            final boolean pReuseObjectStream,
+            final int pCallCompressThreshold) 
     {
         mServerAddress = pServerAddress;
         mPort = pPort;
@@ -85,6 +92,9 @@ public final class CallClient {
         
         mCounterEnabled = pCounterEnabled;
         mReuseObjectStream = pReuseObjectStream;
+        mCallCompressThreshold = pCallCompressThreshold < 0
+            ? BufferCall.DEFAULT_COMPRESS_THRESHOLD
+            : pCallCompressThreshold;
     }
 
     public String getServerAddress() {
@@ -109,6 +119,10 @@ public final class CallClient {
     
     public boolean isReuseObjectStream() {
         return mReuseObjectStream;
+    }
+
+    public int getCallCompressThreshold() {
+        return mCallCompressThreshold;
     }
 
     /**

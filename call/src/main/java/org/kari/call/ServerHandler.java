@@ -30,7 +30,8 @@ public final class ServerHandler extends Handler
         super(pSocket, 
                 pServer.getIOFactory(), 
                 pServer.isCounterEnabled(),
-                pServer.isReuseObjectStream());
+                pServer.isReuseObjectStream(),
+                pServer.getResultCompressThreshold());
     
         mServer = pServer;
     }

@@ -5,6 +5,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 import org.apache.log4j.Logger;
+import org.kari.call.event.BufferCall;
 import org.kari.call.io.CallServerSocketFactory;
 import org.kari.call.io.DefaultCallServerSocketFactory;
 import org.kari.call.io.IOFactory;
@@ -29,6 +30,7 @@ public final class CallServer extends Thread {
 
     private final boolean mCounterEnabled;
     private final boolean mReuseObjectStream;
+    private final int mResultCompressThreshold;
     
     private volatile boolean mRunning = true;
     private ServerSocket mServer;
@@ -42,16 +44,21 @@ public final class CallServer extends Thread {
      * @param pRegistry If null new registry is created with default resolver
      * @param pCallInvoker null for default invoker
      * @param pCounterEnabled Is counter stats collected
+     * @param pReuseObjectStream If true framework reuses Object IO streams
+     * created via IOFactory
+     * @param pResultCompressThreshold Threshold in bytes for result compression.
+     * Use -1 to use default threshold, 0 for always and Integer.MAX_VALUE for never.
      */
     public CallServer(
-            String pServerAddress,
-            int pPort,
-            CallServerSocketFactory pSocketFactory,
-            IOFactory pIOFactory,
-            ServiceRegistry pRegistry,
-            CallInvoker pCallInvoker,
-            boolean pCounterEnabled,
-            final boolean pReuseObjectStream) 
+            final String pServerAddress,
+            final int pPort,
+            final CallServerSocketFactory pSocketFactory,
+            final IOFactory pIOFactory,
+            final ServiceRegistry pRegistry,
+            final CallInvoker pCallInvoker,
+            final boolean pCounterEnabled,
+            final boolean pReuseObjectStream,
+            final int pResultCompressThreshold) 
     {
         super("Server-" + pPort);
         
@@ -76,6 +83,9 @@ public final class CallServer extends Thread {
         
         mCounterEnabled = pCounterEnabled;
         mReuseObjectStream = pReuseObjectStream;
+        mResultCompressThreshold = pResultCompressThreshold < 0
+            ? BufferCall.DEFAULT_COMPRESS_THRESHOLD
+            : pResultCompressThreshold;
     }
 
     public IOFactory getIOFactory() {
@@ -96,6 +106,10 @@ public final class CallServer extends Thread {
 
     public boolean isReuseObjectStream() {
         return mReuseObjectStream;
+    }
+    
+    public int getResultCompressThreshold() {
+        return mResultCompressThreshold;
     }
 
     public int getPort() {

@@ -24,6 +24,7 @@ public final class TestServer {
     private static final boolean TRACE = TestClient.TRACE;
     private static final boolean COUNTER_ENABLED = TestClient.COUNTER_ENABLED;
     private static final boolean REUSE_STREAM_ENABLED = TestClient.REUSE_STREAM_ENABLED;
+    public static final int COMPRESS_THRESHOLD = TestClient.COMPRESS_THRESHOLD;
     
     static final int PORT = 8100;
     
@@ -76,7 +77,8 @@ public final class TestServer {
                 new ServiceRegistry(null),
                 mInvoker,
                 COUNTER_ENABLED,
-                REUSE_STREAM_ENABLED);
+                REUSE_STREAM_ENABLED,
+                COMPRESS_THRESHOLD);
         
         server.getRegistry().register(new TestServiceImpl());
     

@@ -10,6 +10,7 @@ import org.kari.call.CallConstants;
 import org.kari.call.CallSessionProvider;
 import org.kari.call.CallUtil;
 import org.kari.call.ServiceRegistry;
+import org.kari.call.event.BufferCall;
 import org.kari.call.io.CallClientSocketFactory;
 
 /**
@@ -22,6 +23,7 @@ public final class TestClient {
     public static final boolean TRACE = true;
     public static final boolean COUNTER_ENABLED = true;
     public static final boolean REUSE_STREAM_ENABLED = true;
+    public static final int COMPRESS_THRESHOLD = BufferCall.DEFAULT_COMPRESS_THRESHOLD;
 
     
     public static void main(String[] args) {
@@ -68,7 +70,8 @@ public final class TestClient {
                 new TestIOFactory(),
                 new ServiceRegistry(null),
                 COUNTER_ENABLED,
-                REUSE_STREAM_ENABLED);
+                REUSE_STREAM_ENABLED,
+                COMPRESS_THRESHOLD);
     
         TestService service = CallUtil.makeProxy(TestService.class,  client, mSessionProvider);
     

@@ -24,7 +24,8 @@ public final class ClientHandler extends Handler {
         super(pSocket, 
                 pClient.getIOFactory(), 
                 pClient.isCounterEnabled(),
-                pClient.isReuseObjectStream());
+                pClient.isReuseObjectStream(),
+                pClient.getCallCompressThreshold());
     }
     
     /**

@@ -20,7 +20,7 @@ import org.kari.call.io.DirectByteArrayOutputStream;
  * @author kari
  */
 public final class BufferCall extends ServiceCall {
-    private static final int COMPRESS_THRESHOLD = 500;
+    public static final int DEFAULT_COMPRESS_THRESHOLD = 500;
     /**
      * block size for socket read: MAX == 8192
      */
@@ -90,7 +90,7 @@ public final class BufferCall extends ServiceCall {
             totalCount = bout.size();
         }
         
-        final boolean compressed = totalCount > BufferCall.COMPRESS_THRESHOLD;
+        final boolean compressed = totalCount > pHandler.getCompressThreshold();
         
         pOut.writeBoolean(compressed);
         

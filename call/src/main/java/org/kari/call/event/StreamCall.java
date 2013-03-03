@@ -35,8 +35,8 @@ public final class StreamCall extends ServiceCall {
     public StreamCall(
             Object pSessionId,
             boolean pSessionIdChanged,
-            int pServiceUUID, 
-            long pMethodId,
+            short pServiceUUID, 
+            short pMethodId,
             Object[] pParams) 
     {
         super(pSessionId, pSessionIdChanged, pServiceUUID, pMethodId, pParams);

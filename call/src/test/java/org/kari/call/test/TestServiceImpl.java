@@ -38,6 +38,20 @@ public final class TestServiceImpl implements TestService {
         if (TRACE) LOG.info("simple: " + pParam);
         return new TestResult(pParam);
     }
+    
+    @Override
+    public TestResult testSimple(TestParam pParam, String pFoo)
+        throws RemoteException 
+    {
+        if (TRACE) LOG.info("simple: " + pParam + " - " + pFoo);
+        return new TestResult(pParam + " - "+ pFoo);
+    }
+
+    @Override
+    public TestResult testSimple(String pFoo) throws RemoteException {
+        if (TRACE) LOG.info("simple: " + pFoo);
+        return new TestResult(pFoo);
+    }
 
     @Override
     public TestResult testError(TestParam pParam) 

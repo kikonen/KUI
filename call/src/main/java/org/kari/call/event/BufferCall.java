@@ -40,8 +40,8 @@ public final class BufferCall extends ServiceCall {
     public BufferCall(
             Object pSessionId,
             boolean pSessionIdChanged,
-            int pServiceUUID, 
-            long pMethodId,
+            short pServiceUUID, 
+            short pMethodId,
             Object[] pParams) 
     {
         super(pSessionId, pSessionIdChanged, pServiceUUID, pMethodId, pParams);

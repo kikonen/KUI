@@ -1,5 +1,10 @@
 package org.kari.call;
 
+import gnu.trove.map.TObjectShortMap;
+import gnu.trove.map.TShortObjectMap;
+import gnu.trove.map.hash.TObjectShortHashMap;
+import gnu.trove.procedure.TShortObjectProcedure;
+
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.rmi.Remote;
@@ -23,15 +28,17 @@ public final class CallHandler implements InvocationHandler {
     private final CallClient mClient;
     private final CallSessionProvider mSessionProvider;
     
-    private final int mServiceUUID;
+    private final short mServiceUUID;
     
     /**
      * <p>NOTE KI methodIds can be cached only within this handler; identitymap
      * won't hold across different proxy instances
      */
-    private final IdentityHashMap<Method, Long> mMethodIds = 
-            new IdentityHashMap<Method, Long>();
-    
+    private final IdentityHashMap<Method, Short> mMethodIds = 
+            new IdentityHashMap<Method, Short>();
+
+    private final TObjectShortMap<Method> mMethods = new TObjectShortHashMap<Method>();
+
     private Object mLastSessionId;
     
     
@@ -61,10 +68,10 @@ public final class CallHandler implements InvocationHandler {
             return mService.toString();
         }
         if ("hashCode".equals(methodName)) {
-            return 0;
+            return Integer.valueOf(0);
         }
         if ("equals".equals(methodName)) {
-            return false;
+            return Boolean.FALSE;
         }
 
         int retryCount = 0;
@@ -117,14 +124,26 @@ public final class CallHandler implements InvocationHandler {
     /**
      * Get/Create methodId in client side
      */
-    private synchronized long getMethodId(int pServiceUUID, Method pMethod) {
-        Long id = mMethodIds.get(pMethod);
+    private synchronized short getMethodId(int pServiceUUID, Method pTarget) {
+        Short id = mMethodIds.get(pTarget);
         if (id == null) {
-            id = mClient.getRegistry().getResolver().getMethodId(pMethod);
-            mMethodIds.put(pMethod,  new Long(id));
+            if (mMethods.isEmpty()) {
+                TShortObjectMap<Method> methods = mClient.getRegistry().getResolver().resolveMethods(mService);
+                
+                methods.forEachEntry(new TShortObjectProcedure<Method>() {
+                    @Override
+                    public boolean execute(short pMethodId, Method pMethod) {
+                        mMethods.put(pMethod, pMethodId);
+                        return true;
+                    }
+                });
+            }
+
+            mMethodIds.put(pTarget,  new Short(mMethods.get(pTarget)));
+            id = mMethodIds.get(pTarget);
         }
         
-        return id != null ? id.longValue() : 0;
+        return id != null ? id.shortValue() : 0;
     }
 
 }

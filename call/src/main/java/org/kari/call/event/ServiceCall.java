@@ -17,8 +17,8 @@ import org.kari.call.ServiceRegistry;
  * @author kari
  */
 public abstract class ServiceCall extends Call {
-    protected int mServiceUUID;
-    protected long mMethodId;
+    protected short mServiceUUID;
+    protected short mMethodId;
     protected Object[] mParams;
     
 
@@ -37,8 +37,8 @@ public abstract class ServiceCall extends Call {
     protected ServiceCall(
             Object pSessionId,
             boolean pSessionIdChanged,
-            int pServiceUUID, 
-            long pMethodId,
+            short pServiceUUID, 
+            short pMethodId,
             Object[] pParams) 
     {
         super(pSessionId, pSessionIdChanged);
@@ -83,11 +83,16 @@ public abstract class ServiceCall extends Call {
     protected final void writeObjectOut(ObjectOutputStream pOut) 
         throws Exception
     {
-        pOut.writeInt(mServiceUUID);
-        pOut.writeLong(mMethodId);
-        pOut.write(mParams != null ? mParams.length : 0);
+        pOut.writeShort(mServiceUUID);
+        pOut.writeShort(mMethodId);
+        
+        byte code = (byte)(mParams != null ? mParams.length : 0);
+        if (mSessionIdChanged) {
+            code++;
+            code = (byte)-code;
+        }
+        pOut.writeByte(code);
     
-        pOut.writeBoolean(mSessionIdChanged);
         if (mSessionIdChanged) {
             pOut.writeObject(mSessionId);
         }
@@ -107,11 +112,20 @@ public abstract class ServiceCall extends Call {
         throws IOException,
             ClassNotFoundException
     {
-        mServiceUUID = pIn.readInt();
-        mMethodId = pIn.readLong();
-        int count = pIn.read();
+        mServiceUUID = pIn.readShort();
+        mMethodId = pIn.readShort();
 
-        mSessionIdChanged = pIn.readBoolean();
+        int count;
+        {
+            byte code = pIn.readByte();
+            if (code < 0) {
+                mSessionIdChanged = true;
+                code = (byte)-code;
+                code -= 1;
+            }
+            count = code;
+        }
+            
         if (mSessionIdChanged) {
             mSessionId = pIn.readObject();
         }

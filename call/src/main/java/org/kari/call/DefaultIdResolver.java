@@ -1,9 +1,16 @@
 package org.kari.call;
 
+import gnu.trove.map.TShortObjectMap;
+import gnu.trove.map.hash.TShortObjectHashMap;
+
 import java.lang.reflect.Method;
 import java.rmi.Remote;
+import java.rmi.RemoteException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Default resolver logic
@@ -25,22 +32,36 @@ public final class DefaultIdResolver implements IdResolver {
         }
     }
 
+    
     @Override
-    public synchronized long getMethodId(Method pMethod) 
+    public TShortObjectMap<Method> resolveMethods(Class<? extends Remote> pService) 
     {
-        String desc = pMethod.toString();
-        
-        MD5.reset();
-        byte[] digest = MD5.digest(desc.getBytes());
-        
-        long value = 0;
-        for (int i = 0; i < digest.length; i += 2) {
-           value = (value << 8) + ((digest[i] ^ digest[i + 1]) & 0xff);
+        TShortObjectMap<Method> result = new TShortObjectHashMap<Method>();
+
+        List<Method> methods = new ArrayList<Method>();
+        for (Method method : pService.getMethods()) {
+            boolean valid = false;
+            
+            for (Class exType : method.getExceptionTypes()) {
+                valid |= RemoteException.class.isAssignableFrom(exType)
+                    || Exception.class == exType;
+            }
+
+            if (valid) {
+                methods.add(method);
+            }
         }
         
-        return value;
+        Collections.sort(methods, MethodComparator.INSTANCE);
+        
+        for (short i = 0; i < methods.size(); i++) {
+            result.put((short)(i + 1),  methods.get(i));
+        }
+        
+        return result;
     }
-    
+
+
     @Override
     public String getName(Class<? extends Remote> pService) {
         ServiceName tag = pService.getAnnotation(ServiceName.class);
@@ -48,7 +69,7 @@ public final class DefaultIdResolver implements IdResolver {
     }
     
     @Override
-    public int getUUID(Class<? extends Remote> pService) {
+    public short getUUID(Class<? extends Remote> pService) {
         ServiceName tag = pService.getAnnotation(ServiceName.class);
         return tag.id();
     }

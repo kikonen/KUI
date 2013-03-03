@@ -1,14 +1,18 @@
 package org.kari.call;
 
+import gnu.trove.map.TShortObjectMap;
+
 import java.lang.reflect.Method;
 import java.rmi.Remote;
 
 public interface IdResolver {
     /**
-     * UUID for pMethod. Id needs to be unique only within context of
-     * single service
+     * Resolve ids for methods in service. Ids are unique within pService. 
+     * 0 is not allowed as id.
+     * 
+     * @return null to use builtin default logic
      */
-    long getMethodId(Method pMethod);
+    TShortObjectMap<Method> resolveMethods(Class<? extends Remote> pService);
 
     /**
      * Name of service
@@ -18,6 +22,6 @@ public interface IdResolver {
     /**
      * UUID value for service
      */
-    int getUUID(Class<? extends Remote> pService);
+    short getUUID(Class<? extends Remote> pService);
 
 }

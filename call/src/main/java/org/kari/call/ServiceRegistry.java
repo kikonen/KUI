@@ -1,14 +1,11 @@
 package org.kari.call;
 
-import gnu.trove.map.TIntObjectMap;
-import gnu.trove.map.TLongObjectMap;
-import gnu.trove.map.hash.TIntObjectHashMap;
-import gnu.trove.map.hash.TLongObjectHashMap;
+import gnu.trove.map.TShortObjectMap;
+import gnu.trove.map.hash.TShortObjectHashMap;
 import gnu.trove.set.hash.THashSet;
 
 import java.lang.reflect.Method;
 import java.rmi.Remote;
-import java.rmi.RemoteException;
 import java.util.Set;
 
 /**
@@ -23,14 +20,14 @@ public final class ServiceRegistry {
     /**
      * Actual service instances; only in server side
      */
-    private final TIntObjectMap<Remote> mServices = new TIntObjectHashMap<Remote>();
+    private final TShortObjectMap<Remote> mServices = new TShortObjectHashMap<Remote>();
     
     private final Set<Class<? extends Remote>> mRegistered = new THashSet<Class<? extends Remote>>();
     
-    private final TIntObjectMap<String> mNames = new TIntObjectHashMap<String>();
+    private final TShortObjectMap<String> mNames = new TShortObjectHashMap<String>();
     
-    private final TIntObjectMap<TLongObjectMap<Method>> mMethods = 
-            new TIntObjectHashMap<TLongObjectMap<Method>>();
+    private final TShortObjectMap<TShortObjectMap<Method>> mMethods = 
+            new TShortObjectHashMap<TShortObjectMap<Method>>();
     
     private final IdResolver mResolver;
 
@@ -53,26 +50,26 @@ public final class ServiceRegistry {
      * 
      * @return null if not found
      */
-    public synchronized String getServiceName(int pServiceUUID) {
+    public synchronized String getServiceName(short pServiceUUID) {
         return mNames.get(pServiceUUID);
     }
     
     /**
      * @return null if not found
      */
-    public synchronized Remote getService(int pServiceUUID) {
+    public synchronized Remote getService(short pServiceUUID) {
         return mServices.get(pServiceUUID);
     }
     
     /**
      * @return null if not found
      */
-    public synchronized Method getMethod(int pServiceUUID, long pMethodId) {
-        TLongObjectMap<Method> methods = mMethods.get(pServiceUUID);
+    public synchronized Method getMethod(short pServiceUUID, short pMethodId) {
+        TShortObjectMap<Method> methods = mMethods.get(pServiceUUID);
         return methods != null ? methods.get(pMethodId) : null;
     }
     
-    public int getServiceUUID(Class<? extends Remote> pService) {
+    public short getServiceUUID(Class<? extends Remote> pService) {
         return mResolver.getUUID(pService);
     }
     
@@ -85,7 +82,7 @@ public final class ServiceRegistry {
         throws InvalidServiceException
     {
         Class<? extends Remote> cls = CallUtil.getRemote(pService.getClass());
-        int uuid = register(cls);
+        short uuid = register(cls);
         if (uuid != 0) {
             mServices.put(uuid, pService);
         }
@@ -98,10 +95,10 @@ public final class ServiceRegistry {
      * 
      * @throws InvalidServiceException if service is somehow invalid
      */
-    public synchronized int register(Class<? extends Remote> pService) 
+    public synchronized short register(Class<? extends Remote> pService) 
         throws InvalidServiceException
     {
-        int uuid = 0;
+        short uuid = 0;
         if (!mRegistered.contains(pService)) {
             mRegistered.add(pService);
             uuid = mResolver.getUUID(pService);
@@ -118,29 +115,17 @@ public final class ServiceRegistry {
      * Collect valid "remote" methods. Remote method is required to throw
      * RemoteException to allow exceptions from framework to be thrown.
      */
-    private TLongObjectMap<Method> collectMethods(
+    private TShortObjectMap<Method> collectMethods(
             Class<? extends Remote> pService) 
         throws InvalidServiceException 
     {
-        TLongObjectMap<Method> methods = new TLongObjectHashMap<Method>();
+        TShortObjectMap<Method> result = mResolver.resolveMethods(pService);
         
-        for (Method method : pService.getMethods()) {
-            boolean valid = false;
-            
-            for (Class exType : method.getExceptionTypes()) {
-                valid |= RemoteException.class.isAssignableFrom(exType);
-            }
-
-            if (valid) {
-                long methodId = mResolver.getMethodId(method);
-                if (methods.containsKey(methodId)) {
-                    throw new InvalidServiceException("duplicate methoidId: " + method);
-                }
-                methods.put(methodId, method);
-            }
+        if (result == null) {
+            result = DefaultIdResolver.INSTANCE.resolveMethods(pService);
         }
         
-        return methods;
+        return result;
     }
 
 }

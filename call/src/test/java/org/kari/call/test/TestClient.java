@@ -20,7 +20,7 @@ import org.kari.call.io.CallClientSocketFactory;
 public final class TestClient {
     private static final Logger LOG = Logger.getLogger(CallConstants.BASE_PKG + ".test.client");
     public static final boolean TRACE = true;
-    public static final boolean COUNTER_ENABLED = false;
+    public static final boolean COUNTER_ENABLED = true;
     public static final boolean REUSE_STREAM_ENABLED = true;
 
     

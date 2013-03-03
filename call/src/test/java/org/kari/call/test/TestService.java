@@ -28,6 +28,14 @@ public interface TestService extends Remote {
         throws
             RemoteException;
 
+    TestResult testSimple(TestParam pParam, String pFoo)
+            throws
+                RemoteException;
+
+    TestResult testSimple(String pFoo)
+            throws
+                RemoteException;
+
     TestResult testError(TestParam pParam)
         throws
             RemoteException,

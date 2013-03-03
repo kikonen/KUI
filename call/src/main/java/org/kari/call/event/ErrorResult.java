@@ -20,7 +20,8 @@ public final class ErrorResult extends BufferResult {
 
         // skip until "proxy" method; seeing proxy method name in stack trace
         // is usefull
-        setupServerStack(pError, pStackSkip);
+        // => Ignore stack skip; it causes extra gc() in server side
+        setupServerStack(pError, 0);
     }
     
     @Override
@@ -71,12 +72,14 @@ public final class ErrorResult extends BufferResult {
      * application logic shouldn't care about them
      */
     public static void setupServerStack(Throwable pError, int pStackSkip) {
-        final StackTraceElement[] server = pError.getStackTrace();
-        final StackTraceElement[] stack = new StackTraceElement[server.length - pStackSkip];
-
-        System.arraycopy(server, 0, stack, 0, server.length - pStackSkip);
-        
-        pError.setStackTrace(stack);
+        if (pStackSkip > 0) {
+            final StackTraceElement[] server = pError.getStackTrace();
+            final StackTraceElement[] stack = new StackTraceElement[server.length - pStackSkip];
+    
+            System.arraycopy(server, 0, stack, 0, server.length - pStackSkip);
+            
+            pError.setStackTrace(stack);
+        }
     }
 
     @Override

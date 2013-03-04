@@ -47,6 +47,8 @@ public abstract class Handler {
 
     private DirectByteArrayOutputStream mByteOut;
     private DirectByteArrayInputStream mByteIn;
+    private DirectByteArrayOutputStream mCompressBuffer;
+    
     private byte[] mDataBuffer;
     
     private Deflater mDeflater;
@@ -139,6 +141,16 @@ public abstract class Handler {
             mByteOut = new DirectByteArrayOutputStream();
         }
         return mByteOut;
+    }
+
+    /**
+     * Temp deflate/inflate buffer
+     */
+    public final DirectByteArrayOutputStream getCompressBuffer() {
+        if (mCompressBuffer == null) {
+            mCompressBuffer = new DirectByteArrayOutputStream();
+        }
+        return mCompressBuffer;
     }
 
     /**

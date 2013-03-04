@@ -51,6 +51,7 @@ public class KAction extends AbstractAction {
     /**
      * final, to allow framework to perform delegation of action invoking
      */
+    @Override
     public final void actionPerformed(final ActionEvent pEvent) {
         actionPerformed(new ActionContext(pEvent));
 //        ActionGroup group = (ActionGroup)getValue(KAction.KEY_GROUP);

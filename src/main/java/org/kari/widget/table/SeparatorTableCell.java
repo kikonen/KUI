@@ -80,16 +80,19 @@ public class SeparatorTableCell
         this.panel.add(nameLabel, BorderLayout.CENTER);
     }
 
+    @Override
     public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
         configure(value);
         return panel;
     }
 
+    @Override
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         configure(value);
         return panel;
     }
 
+    @Override
     public Object getCellEditorValue() {
         return this.separator;
     }
@@ -113,6 +116,7 @@ public class SeparatorTableCell
             : null;
     }
 
+    @Override
     public void actionPerformed(ActionEvent e) {
         separatorList.getReadWriteLock().writeLock().lock();
         boolean collapsed;

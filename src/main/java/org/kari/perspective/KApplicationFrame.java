@@ -53,6 +53,7 @@ public class KApplicationFrame extends KFrame
         createToolbars();
     }
     
+    @Override
     public ActionContainer getActionContainer() {
         return mActionContainer;
     }

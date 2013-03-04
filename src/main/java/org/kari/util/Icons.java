@@ -64,6 +64,7 @@ public class Icons {
             this.foreground = foreground;
         }
 
+        @Override
         public void paintIcon(Component c, Graphics g, int x, int y) {
             Graphics2D g2d = (Graphics2D)g.create();
             g2d.addRenderingHints(RENDERING_HINTS);
@@ -83,7 +84,9 @@ public class Icons {
             );
         }
 
+        @Override
         public int getIconWidth() { return size; }
+        @Override
         public int getIconHeight() { return size; }
     }
 
@@ -101,6 +104,7 @@ public class Icons {
             this.foreground = foreground;
         }
 
+        @Override
         public void paintIcon(Component c, Graphics g, int x, int y) {
             Graphics2D g2d = (Graphics2D)g.create();
             g2d.addRenderingHints(RENDERING_HINTS);
@@ -110,7 +114,9 @@ public class Icons {
             g2d.fillRect(x, y + left, width + 2 * left, width);
         }
 
+        @Override
         public int getIconWidth() { return size; }
+        @Override
         public int getIconHeight() { return size; }
     }
 
@@ -128,6 +134,7 @@ public class Icons {
             this.foreground = foreground;
         }
 
+        @Override
         public void paintIcon(Component c, Graphics g, int x, int y) {
             Graphics2D g2d = (Graphics2D)g.create();
             g2d.addRenderingHints(RENDERING_HINTS);
@@ -154,7 +161,9 @@ public class Icons {
             g2d.fillPolygon(xPoints, yPoints, 3);
         }
 
+        @Override
         public int getIconWidth() { return size; }
+        @Override
         public int getIconHeight() { return size; }
     }
 
@@ -165,6 +174,7 @@ public class Icons {
     }
 
     private static class TestRunnable implements Runnable {
+        @Override
         public void run() {
             JPanel panel = new JPanel(new FlowLayout());
             for(int size = 10; size <= 15; size += 1) {

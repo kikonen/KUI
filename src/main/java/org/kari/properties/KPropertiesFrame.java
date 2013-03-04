@@ -106,6 +106,7 @@ public abstract class KPropertiesFrame extends KFrame {
         return mButtonPanel;
     }
     
+    @Override
     @Deprecated
     public void show(boolean pVisible) {
         super.show(pVisible);

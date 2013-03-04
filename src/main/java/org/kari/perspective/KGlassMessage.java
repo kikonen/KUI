@@ -59,6 +59,7 @@ public class KGlassMessage extends JComponent
     }
 
     
+    @Override
     public void actionPerformed(ActionEvent e) {
         mAlpha -= 0.025;
         if (mAlpha<0.1) {
@@ -78,7 +79,7 @@ public class KGlassMessage extends JComponent
     {
         mMessage.setText(pMessage);
         JFrame frame = (JFrame)SwingUtilities.getAncestorOfClass(JFrame.class, pOwner);
-        JComponent pane = (JComponent)frame.getLayeredPane();
+        JComponent pane = frame.getLayeredPane();
         Point loc = SwingUtilities.convertPoint(pOwner, pLoc.x, pLoc.y, pane);
         setSize(pSize);
         setLocation(loc);

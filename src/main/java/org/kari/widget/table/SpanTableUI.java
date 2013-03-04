@@ -22,6 +22,7 @@ class SpanTableUI extends BasicTableUI {
 
     private KSeparatorTable separatorTable;
 
+    @Override
     public void installUI(JComponent c) {
         this.separatorTable = (KSeparatorTable) c;
         super.installUI(c);
@@ -30,6 +31,7 @@ class SpanTableUI extends BasicTableUI {
     /** Paint a representation of the <code>table</code> instance
      * that was set in installUI().
      */
+    @Override
     public void paint(Graphics g, JComponent c) {
         Rectangle clip = g.getClipBounds();
 

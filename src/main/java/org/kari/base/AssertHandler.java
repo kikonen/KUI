@@ -24,6 +24,7 @@ public final class AssertHandler implements InvocationHandler {
         mObject = pObject;
     }
 
+    @Override
     public Object invoke(
         final Object proxy,
         final Method pMethod,

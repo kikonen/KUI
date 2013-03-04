@@ -19,6 +19,7 @@ public abstract class KAppFrame extends JFrame
         // Nothing
     }
 
+    @Override
     public void start(CommandLine pArgs) 
         throws Exception
     {

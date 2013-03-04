@@ -1,5 +1,6 @@
 package org.kari.call;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.net.Socket;
 import java.rmi.RemoteException;
@@ -105,6 +106,11 @@ public final class ClientHandler extends Handler {
             Exception 
     {
         int code = mIn.read();
+        if (code < 0) {
+            // EOF
+            throw new EOFException();
+        }
+        
         CallType type = CallType.resolve(code);
         Result result = (Result)type.create();
         result.receive(this, mIn);

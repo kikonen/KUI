@@ -86,12 +86,17 @@ public final class ServerHandler extends Handler
                     int code = mIn.read();
                     waiting = false;
                     
-                    // handle call only if server is still running
-                    if (isRunning()) {
-                        CallType type = CallType.resolve(code);
-                        handle(type);
+                    if (code < 0) {
+                        // EOF
+                        mRunning = false;
+                    } else {
+                        // handle call only if server is still running
+                        if (isRunning()) {
+                            CallType type = CallType.resolve(code);
+                            handle(type);
+                        }
+                        success = true;
                     }
-                    success = true;
                 } finally {
                     if (mCounterEnabled && success) {
                         if (TRACE) LOG.info("out=" + mCountOut.getMarkSize() + ", in=" + mCountIn.getMarkSize());

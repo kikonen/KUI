@@ -43,14 +43,18 @@ public final class CountInputStream extends FilterInputStream {
     @Override
     public int read() throws IOException {
         int value = in.read();
-        mCount++;
+        if (value > 0) {
+            mCount++;
+        }
         return value;
     }
 
     @Override
     public int read(byte[] pB, int pOff, int pLen) throws IOException {
         int count = in.read(pB, pOff, pLen);
-        mCount += count;
+        if (count > 0) {
+            mCount += count;
+        }
         return count;
     }
 

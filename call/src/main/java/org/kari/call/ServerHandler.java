@@ -147,6 +147,9 @@ public final class ServerHandler extends Handler
                 // socket has failed or major internal error
                 // => Attempt to send error to client and die
                 suicide = true;
+            } finally {
+                // discard possible oversized buffer
+                resetByteOut();
             }
 
             if (received) {

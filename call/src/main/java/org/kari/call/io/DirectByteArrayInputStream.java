@@ -29,6 +29,10 @@ public final class DirectByteArrayInputStream extends ByteArrayInputStream {
         mark = pOffset;
     }
     
+    public void empty() {
+        set(EMPTY_BUFFER, 0, 0);
+    }
+    
     public byte[] getBuffer() {
         return buf;
     }

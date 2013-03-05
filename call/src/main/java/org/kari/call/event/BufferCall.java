@@ -12,6 +12,7 @@ import java.util.zip.Inflater;
 import org.kari.call.CallType;
 import org.kari.call.CallUtil;
 import org.kari.call.Handler;
+import org.kari.call.io.BufferPool;
 import org.kari.call.io.DirectByteArrayOutputStream;
 
 /**
@@ -95,26 +96,34 @@ public final class BufferCall extends ServiceCall {
         pOut.writeBoolean(compressed);
         
         if (compressed) {
-            final DirectByteArrayOutputStream out = pHandler.getCompressBuffer();
-            out.reset();
-            
-            final Deflater deflater = pHandler.getDeflater();
-            final byte[] writeBuffer = pHandler.getDataBuffer();
-            
-            deflater.setInput(data, 0,  totalCount);
-            deflater.finish();
-            
-            while (!deflater.finished()) {
-                int count = deflater.deflate(writeBuffer, 0, writeBuffer.length);
-                if (count > 0) {
-                    out.write(writeBuffer, 0, count);
+            byte[] out = BufferPool.getInstance().allocate(totalCount);
+            try {
+                final Deflater deflater = pHandler.getDeflater();
+                
+                deflater.setInput(data, 0,  totalCount);
+                deflater.finish();
+     
+                int compressTotal = 0;
+                int offset = 0;
+                while (!deflater.finished()) {
+                    // grow may occur only if compression ration is really bad
+                    if (offset + BufferPool.BLOCK_SIZE > out.length) {
+                        out = BufferPool.getInstance().grow(out, out.length + BufferPool.BLOCK_SIZE);
+                    }
+                    
+                    int count = deflater.deflate(out, offset, out.length - offset);
+                    if (count > 0) {
+                        compressTotal += count;
+                        offset += count;
+                    }
                 }
+                deflater.reset();
+                
+                CallUtil.writeCompactInt(pOut, compressTotal);
+                pOut.write(out, 0, compressTotal);
+            } finally {
+                BufferPool.getInstance().release(out);
             }
-            deflater.reset();
-            
-            final int compressTotal = out.size();
-            CallUtil.writeCompactInt(pOut, compressTotal);
-            pOut.write(out.getBuffer(), 0, compressTotal);
         } else {
             if (pHandler.isReuseObjectStream()) {
                 CallUtil.writeCompactInt(pOut, totalCount);
@@ -140,50 +149,55 @@ public final class BufferCall extends ServiceCall {
             int totalCount = 0;
             final int compressCount = CallUtil.readCompactInt(pIn);
             
-            final Inflater inflater = pHandler.getInflater();
+            byte[] data = BufferPool.getInstance().allocate(compressCount);
             final DirectByteArrayOutputStream out = pHandler.getByteOut();
-            final DirectByteArrayOutputStream data = pHandler.getCompressBuffer();
-            final byte[] readBuffer = pHandler.getDataBuffer();
-
-            out.reset();
-            data.reset();
-            
-            // read whole block in memory
-            {
-                int remaining = compressCount;
-                while (remaining > 0) {
-                    final int count = pIn.read(
-                            readBuffer, 
-                            0, 
-                            Math.min(
-                                    READ_BLOCK_SIZE, 
-                                    Math.min(remaining, readBuffer.length)));
-                    if (count > 0) {
-                        data.write(readBuffer, 0, count);
-                        remaining -= count;
+            try {
+                // read stream into "data"
+                {
+                    int offset = 0;
+                    int remaining = compressCount;
+                    while (remaining > 0) {
+                        final int count = pIn.read(
+                                data, 
+                                offset, 
+                                Math.min(
+                                        READ_BLOCK_SIZE, 
+                                        remaining));
+                        if (count > 0) {
+                            remaining -= count;
+                            offset += count;
+                        }
                     }
                 }
-            }
-            
-            
-            inflater.setInput(data.getBuffer(),  0,  data.size());
-
-            while (!inflater.finished()) {
-                try {
-                    int count = inflater.inflate(readBuffer, 0, readBuffer.length);
-                    if (count > 0) {
-                        out.write(readBuffer, 0, count);
-                        totalCount += count;
+                
+                // inflate "data" into "out"
+                {
+                    final byte[] buffer = pHandler.getBuffer();
+                    final Inflater inflater = pHandler.getInflater();
+                    
+                    inflater.setInput(data, 0, compressCount);
+                    out.reset();
+        
+                    while (!inflater.finished()) {
+                        try {
+                            int count = inflater.inflate(buffer, 0, buffer.length);
+                            if (count > 0) {
+                                out.write(buffer, 0, count);
+                                totalCount += count;
+                            }
+                        } catch (DataFormatException e) {
+                            throw new IOException(e);
+                        }
                     }
-                } catch (DataFormatException e) {
-                    throw new IOException(e);
+                    inflater.reset();
                 }
+            } finally {
+                BufferPool.getInstance().release(data);
             }
-            inflater.reset();
-            
-            result = pHandler.createObjectIn(out.size());
+            result = pHandler.createObjectIn(out.getBuffer(), out.size());
         } else {
             if (pHandler.isReuseObjectStream()) {
+                // read stream into "data"
                 final int totalCount = CallUtil.readCompactInt(pIn);
                 final byte[] data = pHandler.prepareByteOut(totalCount);
                 
@@ -199,7 +213,7 @@ public final class BufferCall extends ServiceCall {
                         offset += count;
                     }
                 }
-                result = pHandler.createObjectIn(totalCount);
+                result = pHandler.createObjectIn(data, totalCount);
             } else {
                 result = pHandler.getIOFactory().createObjectInput(pIn, false);
             }

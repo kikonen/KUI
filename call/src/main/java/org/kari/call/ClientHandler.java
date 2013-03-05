@@ -92,6 +92,9 @@ public final class ClientHandler extends Handler {
             if (!mRunning) {
                 free();
             }
+            
+            // discard possible oversized buffer
+            resetByteOut();
         }
         
         return result.getResult();

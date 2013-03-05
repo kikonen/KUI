@@ -2,6 +2,7 @@ package org.kari.call.test;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.util.zip.GZIPOutputStream;
 
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
@@ -12,6 +13,7 @@ import org.kari.call.CallUtil;
 import org.kari.call.ServiceRegistry;
 import org.kari.call.event.BufferCall;
 import org.kari.call.io.CallClientSocketFactory;
+import org.kari.io.DirectByteArrayOutputStream;
 
 /**
  * Test remote call: client side
@@ -140,9 +142,27 @@ public final class TestClient {
         try {
             byte[] in = new byte[100000];
             for (int i = 0; i < in.length; i++) {
-                in[i] = (byte)i;
+                in[i] = (byte)(Math.random() * 255);
             }
             byte[] out = service.testBigCall(in);
+            if (TRACE) LOG.info("response: " + out.length);    
+        } catch (Exception e) {
+            LOG.error("Failed", e);
+        }
+
+        if (TRACE) LOG.info("TEST " + (idx++) + " - bigCall");
+        try {
+            DirectByteArrayOutputStream buffer = new DirectByteArrayOutputStream();
+            GZIPOutputStream gout = new GZIPOutputStream(buffer);
+            while (buffer.size() < 100000) {
+                byte[] in = new byte[1000];
+                for (int i = 0; i < in.length; i++) {
+                    in[i] = (byte)(Math.random() * 255);
+                }
+                gout.write(in);
+            }
+            gout.close();
+            byte[] out = service.testBigCall(buffer.toByteArray());
             if (TRACE) LOG.info("response: " + out.length);    
         } catch (Exception e) {
             LOG.error("Failed", e);

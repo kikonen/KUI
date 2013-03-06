@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
-import org.kari.call.event.BufferCall;
 import org.kari.call.io.CallClientSocketFactory;
 import org.kari.call.io.DefaultCallClientSocketFactory;
 import org.kari.call.io.IOFactory;
@@ -20,21 +19,14 @@ import org.kari.call.io.IOFactory;
  *
  * @author kari
  */
-public final class CallClient {
+public final class CallClient extends CallBase {
     private static final Logger LOG = Logger.getLogger(CallConstants.BASE_PKG + ".client");
 
     static {
         CallType.initCache();
     }
 
-    private final String mServerAddress;
-    private final int mPort;
     private final CallClientSocketFactory mSocketFactory;
-    private final IOFactory mIOFactory;
-    private final ServiceRegistry mRegistry;
-    private final boolean mCounterEnabled;
-    private final boolean mReuseObjectStream;
-    private final int mCallCompressThreshold;
 
     /**
      * All instantiated handlers. Allow closing of connections even if they
@@ -62,67 +54,23 @@ public final class CallClient {
      * @param pCounterEnabled Is counter stats collected
      * @param pReuseObjectStream If true framework reuses Object IO streams
      * created via IOFactory
-     * @param pCallCompressThreshold Threshold in bytes for buffer call compression.
-     * Use -1 to use default threshold, 0 for always and Integer.MAX_VALUE for never.
      */
     public CallClient(
             final String pServerAddress, 
             final int pPort,
-            final CallClientSocketFactory pSocketFactory,
-            final IOFactory pIOFactory,
             final ServiceRegistry pRegistry,
+            final IOFactory pIOFactory,
+            final CallClientSocketFactory pSocketFactory,
             final boolean pCounterEnabled,
             final boolean pReuseObjectStream,
             final int pCallCompressThreshold) 
     {
-        mServerAddress = pServerAddress;
-        mPort = pPort;
+        super(pServerAddress, pPort, pRegistry, pIOFactory);
         
         mSocketFactory = pSocketFactory != null
             ? pSocketFactory
             : DefaultCallClientSocketFactory.INSTANCE;
         
-        mIOFactory = pIOFactory != null
-                ? pIOFactory
-                : DefaultIOFactory.INSTANCE;
-        
-        mRegistry = pRegistry != null
-            ? pRegistry
-            : new ServiceRegistry(null);
-        
-        mCounterEnabled = pCounterEnabled;
-        mReuseObjectStream = pReuseObjectStream;
-        mCallCompressThreshold = pCallCompressThreshold < 0
-            ? BufferCall.DEFAULT_COMPRESS_THRESHOLD
-            : pCallCompressThreshold;
-    }
-
-    public String getServerAddress() {
-        return mServerAddress;
-    }
-
-    public int getPort() {
-        return mPort;
-    }
-
-    public ServiceRegistry getRegistry() {
-        return mRegistry;
-    }
-
-    public IOFactory getIOFactory() {
-        return mIOFactory;
-    }
-
-    public boolean isCounterEnabled() {
-        return mCounterEnabled;
-    }
-    
-    public boolean isReuseObjectStream() {
-        return mReuseObjectStream;
-    }
-
-    public int getCallCompressThreshold() {
-        return mCallCompressThreshold;
     }
 
     /**
@@ -154,7 +102,10 @@ public final class CallClient {
         
         if (handler == null) {
             try {
-                Socket socket = mSocketFactory.createSocket(mServerAddress, mPort);
+                Socket socket = mSocketFactory.createSocket(
+                        getServerAddress(), 
+                        getPort());
+                
                 handler = new ClientHandler(socket, this);
                 mHandlers.add(handler);
             } catch (IOException e) {

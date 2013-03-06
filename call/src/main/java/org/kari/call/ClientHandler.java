@@ -28,8 +28,9 @@ public final class ClientHandler extends Handler {
         super(pSocket, 
                 pClient.getIOFactory(), 
                 pClient.isCounterEnabled(),
+                pClient.isTraceTrafficStatistics(),
                 pClient.isReuseObjectStream(),
-                pClient.getCallCompressThreshold());
+                pClient.getCompressThreshold());
     }
     
     public Object getLastSessionId() {
@@ -51,6 +52,7 @@ public final class ClientHandler extends Handler {
             Throwable 
     {
         Result result;
+        final boolean TRACE = mTraceTrafficStatistics;
 
         boolean acked = false;
         if (mCounterEnabled) {

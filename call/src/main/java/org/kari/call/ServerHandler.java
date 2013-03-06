@@ -32,8 +32,9 @@ public final class ServerHandler extends Handler
         super(pSocket, 
                 pServer.getIOFactory(), 
                 pServer.isCounterEnabled(),
+                pServer.isTraceTrafficStatistics(),
                 pServer.isReuseObjectStream(),
-                pServer.getResultCompressThreshold());
+                pServer.getCompressThreshold());
     
         mServer = pServer;
     }
@@ -71,6 +72,7 @@ public final class ServerHandler extends Handler
 
     @Override
     public void run() {
+        final boolean TRACE = mTraceTrafficStatistics;
         boolean waiting = true;
         try {
             while (isRunning()) {

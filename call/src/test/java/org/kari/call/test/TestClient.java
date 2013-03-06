@@ -24,6 +24,7 @@ public final class TestClient {
     private static final Logger LOG = Logger.getLogger(CallConstants.BASE_PKG + ".test.client");
     public static final boolean TRACE = true;
     public static final boolean COUNTER_ENABLED = true;
+    public static final boolean TRACE_TRAFFIC_STATISTICS = true;
     public static final boolean REUSE_STREAM_ENABLED = true;
     public static final int COMPRESS_THRESHOLD = BufferCall.DEFAULT_COMPRESS_THRESHOLD;
 
@@ -65,17 +66,21 @@ public final class TestClient {
             ? pArgs[0]
             : "localhost";
             
-        CallClient client = new CallClient(
+        CallClient call = new CallClient(
                 host, 
                 TestServer.PORT, 
-                mSocketFactory,
-                new TestIOFactory(),
                 new ServiceRegistry(null),
+                new TestIOFactory(),
+                mSocketFactory,
                 COUNTER_ENABLED,
                 REUSE_STREAM_ENABLED,
                 COMPRESS_THRESHOLD);
-    
-        TestService service = CallUtil.makeProxy(TestService.class,  client, mSessionProvider);
+        call.setCounterEnabled(COUNTER_ENABLED);
+        call.setTraceTrafficStatistics(TRACE_TRAFFIC_STATISTICS);
+        call.setReuseObjectStream(REUSE_STREAM_ENABLED);
+        call.setCompressThreshold(COMPRESS_THRESHOLD);
+        
+        TestService service = CallUtil.makeProxy(TestService.class,  call, mSessionProvider);
     
         int count = 1;
         boolean reset = false;

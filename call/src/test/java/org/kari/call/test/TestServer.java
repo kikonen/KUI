@@ -23,6 +23,7 @@ public final class TestServer {
     private static final Logger LOG = Logger.getLogger(CallConstants.BASE_PKG + ".test.server");
     private static final boolean TRACE = TestClient.TRACE;
     private static final boolean COUNTER_ENABLED = TestClient.COUNTER_ENABLED;
+    private static final boolean TRACE_TRAFFIC_STATISTICS = TestClient.TRACE_TRAFFIC_STATISTICS;
     private static final boolean REUSE_STREAM_ENABLED = TestClient.REUSE_STREAM_ENABLED;
     public static final int COMPRESS_THRESHOLD = TestClient.COMPRESS_THRESHOLD;
     
@@ -69,20 +70,23 @@ public final class TestServer {
     }
     
     private void start() throws Exception {
-        CallServer server = new CallServer(
+        CallServer call = new CallServer(
                 null, 
                 PORT, 
-                mSocketFactory, 
-                new TestIOFactory(),
                 new ServiceRegistry(null),
-                mInvoker,
-                COUNTER_ENABLED,
-                REUSE_STREAM_ENABLED,
-                COMPRESS_THRESHOLD);
+                new TestIOFactory(),
+                mSocketFactory, 
+                mInvoker);
+        call.setCounterEnabled(COUNTER_ENABLED);
+        call.setTraceTrafficStatistics(TRACE_TRAFFIC_STATISTICS);
+        call.setReuseObjectStream(REUSE_STREAM_ENABLED);
+        call.setCompressThreshold(COMPRESS_THRESHOLD);
         
-        server.getRegistry().register(new TestServiceImpl());
+        call.getRegistry().register(new TestServiceImpl());
     
-        server.start();
+        // not daemon since it it's only thread
+        call.start(false);
+        
         LOG.info("started server");
     }
 

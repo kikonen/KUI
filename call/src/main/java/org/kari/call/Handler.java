@@ -28,7 +28,6 @@ public abstract class Handler {
     private static final Logger LOG = Logger.getLogger(CallConstants.BASE_PKG + ".handler");
     private static final int BUFFER_SIZE = 8192;
     static final int COMPRESSION_LEVEL = Deflater.DEFAULT_COMPRESSION;
-    static final boolean TRACE = false;
     static final byte MAGIC_VALUE = -2;
     
     protected final Socket mSocket;
@@ -45,6 +44,7 @@ public abstract class Handler {
     
     private final boolean mReuseObjectStream;
     private final int mCompressThreshold;
+    protected final boolean mTraceTrafficStatistics;
 
     private DirectByteArrayOutputStream mByteOut;
     private final DirectByteArrayInputStream mByteIn = new DirectByteArrayInputStream();
@@ -65,6 +65,7 @@ public abstract class Handler {
             final Socket pSocket,
             final IOFactory pIOFactory,
             final boolean pCounterEnabled,
+            final boolean pTraceTrafficStatistics,
             final boolean pReuseObjectStream,
             final int pCompressThreshold) 
         throws IOException 
@@ -89,8 +90,8 @@ public abstract class Handler {
         }
         
         mIOFactory = pIOFactory;
+        mTraceTrafficStatistics = pTraceTrafficStatistics;
         mReuseObjectStream = pReuseObjectStream;
-        
         mCompressThreshold = pCompressThreshold;
     }
     

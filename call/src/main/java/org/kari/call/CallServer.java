@@ -5,7 +5,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 import org.apache.log4j.Logger;
-import org.kari.call.event.BufferCall;
 import org.kari.call.io.CallServerSocketFactory;
 import org.kari.call.io.DefaultCallServerSocketFactory;
 import org.kari.call.io.IOFactory;
@@ -13,28 +12,19 @@ import org.kari.call.io.IOFactory;
 /**
  * Handles listening client connections
  */
-public final class CallServer extends Thread {
+public final class CallServer extends CallBase 
+    implements Runnable
+{
     private static final Logger LOG = Logger.getLogger(CallConstants.BASE_PKG + ".server");
 
     static {
         CallType.initCache();
     }
 
-    private final String mServerAddress;
-    private final int mPort;
     private final CallServerSocketFactory mSocketFactory;
-    private final IOFactory mIOFactory;
-    private final ServiceRegistry mRegistry;
-    
     private final CallInvoker mCallInvoker;
-
-    private final boolean mCounterEnabled;
-    private final boolean mReuseObjectStream;
-    private final int mResultCompressThreshold;
-    
-    private volatile boolean mRunning = true;
     private ServerSocket mServer;
-    
+    private Thread mThread;
     
     /**
      * @param pServerAddress Either actual IP/host or application specific
@@ -46,87 +36,54 @@ public final class CallServer extends Thread {
      * @param pCounterEnabled Is counter stats collected
      * @param pReuseObjectStream If true framework reuses Object IO streams
      * created via IOFactory
-     * @param pResultCompressThreshold Threshold in bytes for result compression.
-     * Use -1 to use default threshold, 0 for always and Integer.MAX_VALUE for never.
      */
     public CallServer(
             final String pServerAddress,
             final int pPort,
-            final CallServerSocketFactory pSocketFactory,
-            final IOFactory pIOFactory,
             final ServiceRegistry pRegistry,
-            final CallInvoker pCallInvoker,
-            final boolean pCounterEnabled,
-            final boolean pReuseObjectStream,
-            final int pResultCompressThreshold) 
+            final IOFactory pIOFactory,
+            final CallServerSocketFactory pSocketFactory,
+            final CallInvoker pCallInvoker) 
     {
-        super("Server-" + pPort);
-        
-        mServerAddress = pServerAddress;
-        mPort = pPort;
+        super(pServerAddress, pPort, pRegistry, pIOFactory);
         
         mSocketFactory = pSocketFactory != null
             ? pSocketFactory
             : DefaultCallServerSocketFactory.INSTANCE;
         
-        mIOFactory = pIOFactory != null
-            ? pIOFactory
-            : DefaultIOFactory.INSTANCE;
-        
-        mRegistry = pRegistry != null
-            ? pRegistry
-            : new ServiceRegistry(null);
-        
         mCallInvoker = pCallInvoker != null 
             ? pCallInvoker 
             : DefaultCallInvoker.INSTANCE;
-        
-        mCounterEnabled = pCounterEnabled;
-        mReuseObjectStream = pReuseObjectStream;
-        mResultCompressThreshold = pResultCompressThreshold < 0
-            ? BufferCall.DEFAULT_COMPRESS_THRESHOLD
-            : pResultCompressThreshold;
-    }
-
-    public IOFactory getIOFactory() {
-        return mIOFactory;
-    }
-
-    public ServiceRegistry getRegistry() {
-        return mRegistry;
     }
 
     public CallInvoker getCallInvoker() {
         return mCallInvoker;
     }
 
-    public boolean isCounterEnabled() {
-        return mCounterEnabled;
-    }
-
-    public boolean isReuseObjectStream() {
-        return mReuseObjectStream;
+    /**
+     * @return true if server is not terminated
+     */
+    @Override
+    public boolean isRunning() {
+        return mRunning;
     }
     
-    public int getResultCompressThreshold() {
-        return mResultCompressThreshold;
-    }
-
-    public int getPort() {
-        return mPort;
-    }
-
-
-    public void kill() {
+    public synchronized void kill() {
         mRunning = false;
+        mThread.interrupt();
+        mThread = null;
         closeServerSocket();
     }
 
     /**
-     * @return true if server is not terminated
+     * @param pDaemon If true server is started as daemon thread
      */
-    public boolean isRunning() {
-        return mRunning;
+    public synchronized void start(boolean pDaemon) {
+        if (mThread == null) {
+            mThread = new Thread(this, "Server-" + getPort());
+            mThread.setDaemon(pDaemon);
+            mThread.start();
+        }
     }
 
     @Override
@@ -167,7 +124,9 @@ public final class CallServer extends Thread {
         throws IOException 
     {
         if (mServer == null) {
-            mServer = mSocketFactory.createSocket(mServerAddress,  mPort);
+            mServer = mSocketFactory.createSocket(
+                    getServerAddress(),  
+                    getPort());
         }
         return mServer;
     }

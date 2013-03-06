@@ -12,7 +12,6 @@ import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 
 import org.apache.log4j.Logger;
-import org.kari.call.io.BufferPool;
 import org.kari.call.io.CountInputStream;
 import org.kari.call.io.CountOutputStream;
 import org.kari.call.io.DirectByteArrayInputStream;
@@ -139,7 +138,7 @@ public abstract class Handler {
      */
     public final DirectByteArrayOutputStream getByteOut() {
         if (mByteOut == null) {
-            mByteOut = new DirectByteArrayOutputStream();
+            mByteOut = new DirectByteArrayOutputStream(BUFFER_SIZE);
         }
         return mByteOut;
     }
@@ -149,11 +148,7 @@ public abstract class Handler {
      */
     public final void resetByteOut() {
         if (mByteOut != null) {
-            if (mByteOut.getBuffer().length > BufferPool.MAX_POOLED_BUFFER_SIZE) {
-                mByteOut = null;
-            } else {
-                mByteOut.reset();
-            }
+            mByteOut.set(BUFFER_SIZE);
         }
         
         if (mByteIn != null) {
@@ -169,13 +164,9 @@ public abstract class Handler {
      */
     public final byte[] prepareByteOut(int pCount) {
         final DirectByteArrayOutputStream out = getByteOut();
-    
-        // fill with dummy data
-        final byte[] data = getBuffer();
-        while (out.getBuffer().length < pCount) {
-            out.write(data, 0, data.length);
-        }
+
         out.reset();
+        out.ensureCapacity(pCount);
         
         return out.getBuffer();
     }
@@ -214,17 +205,29 @@ public abstract class Handler {
             ? getByteObjectOut()
             : mIOFactory.createObjectOutput(getByteOut(), false);
     }
-    
+
     /**
-     * @return Wrap pBuffer into possibly reused object stream
+     * Reused stream bound into {@link #mByteIn}
      */
-    public final ObjectInputStream createObjectIn(byte[] pBuffer, int pCount)
+    private final ObjectInputStream getByteObjectIn() 
+        throws IOException
+    {
+        if (mByteObjectIn == null) {
+            mByteObjectIn = mIOFactory.createObjectInput(mByteIn, false);
+        }
+        return mByteObjectIn;
+    }
+
+    /**
+     * @return input wrapper around {@link #getByteOut()} buffer
+     */
+    public final ObjectInputStream createObjectIn(int pSize)
         throws IOException 
     {
         // wrap data in "write" buffer into "read" buffer
         DirectByteArrayInputStream bin = mByteIn;
         bin.reset();
-        bin.set(pBuffer, 0, pCount);
+        bin.set(getByteOut().getBuffer(), 0, pSize);
 
         return mReuseObjectStream
             ? getByteObjectIn()
@@ -241,18 +244,6 @@ public abstract class Handler {
             mByteObjectOut = mIOFactory.createObjectOutput(getByteOut(), false);
         }
         return mByteObjectOut;
-    }
-
-    /**
-     * Reused stream bound into {@link #getByteOut()}
-     */
-    public final ObjectInputStream getByteObjectIn() 
-        throws IOException
-    {
-        if (mByteObjectIn == null) {
-            mByteObjectIn = mIOFactory.createObjectInput(mByteIn, false);
-        }
-        return mByteObjectIn;
     }
 
     public final void finishObjectOut(ObjectOutputStream pOut)

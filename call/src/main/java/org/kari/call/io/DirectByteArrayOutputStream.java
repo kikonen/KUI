@@ -1,12 +1,12 @@
 package org.kari.call.io;
 
 import java.io.ByteArrayOutputStream;
-import java.util.Arrays;
 
 /**
  * Direct byte array output stream
  * 
- * <p>NOTE: KI Several methods overridden to avoid synchronized
+ * <p>NOTE KI Several methods overridden to avoid synchronized
+ * <p>NOTE KI Uses internally BufferPool for memory allocation to reduce gc()
  * 
  * @author kari
  */
@@ -17,8 +17,9 @@ public final class DirectByteArrayOutputStream
         this(1024);
     }
 
-    public DirectByteArrayOutputStream(int size) {
-        super(size);
+    public DirectByteArrayOutputStream(int pSize) {
+        super(0);
+        buf = BufferPool.INSTANCE.allocate(pSize);
     }
 
     /**
@@ -33,22 +34,14 @@ public final class DirectByteArrayOutputStream
     }
     
     /**
-     * Reset internal buffer into pBuf
-     */
-    public void set(byte[] pBuf) {
-    	buf = pBuf;
-    	reset();
-    }
-    
-    /**
-     * Reset internal buffer into buffer of size pSize
+     * Reset internal buffer into buffer of size pSize (or minimal pooled
+     * size, which is at least pSize)
      */
     public void set(int pSize) {
-    	buf = new byte[pSize];
-    	reset();
+        buf = BufferPool.INSTANCE.change(buf, pSize);
     }
     
-    private void ensureCapacity(int minCapacity) {
+    public void ensureCapacity(int minCapacity) {
         // overflow-conscious code
         if (minCapacity - buf.length > 0)
             grow(minCapacity);
@@ -64,18 +57,25 @@ public final class DirectByteArrayOutputStream
         if (newCapacity - minCapacity < 0)
             newCapacity = minCapacity;
         if (newCapacity < 0) {
-            if (minCapacity < 0) // overflow
+            if (minCapacity < 0) {
+                // overflow
                 throw new OutOfMemoryError();
+            }
             newCapacity = Integer.MAX_VALUE;
         }
-        buf = Arrays.copyOf(buf, newCapacity);
+        
+        byte[] newBuffer = BufferPool.INSTANCE.allocate(newCapacity);
+        // copy only existing data
+        System.arraycopy(buf, 0, newBuffer, 0, count);
+        BufferPool.INSTANCE.release(buf);
+        buf = newBuffer;
     }
 
     /**
      * <p>NOTE: KI overridden to avoid synchronized
      */
     @Override
-	public void write(int b) {
+    public void write(int b) {
         ensureCapacity(count + 1);
         buf[count] = (byte) b;
         count += 1;
@@ -85,7 +85,7 @@ public final class DirectByteArrayOutputStream
      * <p>NOTE: KI overridden to avoid synchronized
      */
     @Override
-	public void write(byte b[], int off, int len) {
+    public void write(byte b[], int off, int len) {
         if ((off < 0) || (off > b.length) || (len < 0) ||
             ((off + len) - b.length > 0)) {
             throw new IndexOutOfBoundsException();
@@ -99,7 +99,7 @@ public final class DirectByteArrayOutputStream
      * <p>NOTE: KI overridden to avoid synchronized
      */
     @Override
-	public void reset() {
+    public void reset() {
         count = 0;
     }
 
@@ -107,7 +107,7 @@ public final class DirectByteArrayOutputStream
      * <p>NOTE: KI overridden to avoid synchronized
      */
     @Override
-	public int size() {
+    public int size() {
         return count;
     }
 

@@ -27,14 +27,7 @@ public final class BufferPool {
             mIndex = pIndex;
             mMaxCount = MAX_SLOT_SIZE  + 1 - pIndex;
             
-            int idx = pIndex;
-            int size = 1;
-            while (idx > 0) {
-                size *= 2;
-                idx--;
-            }
-            mSize = size;
-
+            mSize = calculateSize(pIndex);
         }
 
         byte[] allocate() {
@@ -56,7 +49,7 @@ public final class BufferPool {
         }
     }
     
-    private static final BufferPool INSTANCE = new BufferPool();
+    public static final BufferPool INSTANCE = new BufferPool();
     private static final byte[] EMPTY_BUFFER = new byte[0];
 
 
@@ -91,12 +84,34 @@ public final class BufferPool {
         return INSTANCE;
     }
 
-    private int calculateSlotIndex(int pSize) {
-        int slot = 0;
-        while (pSize > 0) {
-            pSize >>= 1;
+    /**
+     * Calculate byte size for slot pIdx
+     */
+    static int calculateSize(int pSlot) {
+        int size = 1;
+        while (pSlot > 0) {
+            size *= 2;
+            pSlot--;
+        }
+        return size;
+    }
+
+    /**
+     * Calculate slot for pSize
+     */
+    static int calculateSlotIndex(final int pSize) {
+        int slot = -1;
+        int remaining = pSize;
+        while (remaining > 0) {
+            remaining >>= 1;
             slot++;
         }
+        
+        final int size = calculateSize(slot); 
+        if (size != pSize) {
+            slot++;
+        }
+        
         return slot;
     }
     
@@ -125,12 +140,39 @@ public final class BufferPool {
 
     /**
      * Grow allocated buffer, which is at least pSize. Old buffer is released
-     * and data is copied into new reserved buffer
+     * and data is copied into new reserved buffer.
+     * 
+     * @return new allocated buffer, pBuffer if it was already big enough
      */
-    public synchronized byte[] grow(byte[] pBuffer, int pSize) {
-        byte[] buffer = allocate(pSize);
-        System.arraycopy(pBuffer, 0, buffer, 0, pBuffer.length);
-        release(pBuffer);
+    public byte[] grow(byte[] pBuffer, int pSize) {
+        byte[] buffer = pBuffer;
+        
+        // no alloc if buffer is already big enough
+        if (pBuffer.length < pSize) {
+            buffer = allocate(pSize);
+            System.arraycopy(pBuffer, 0, buffer, 0, pBuffer.length);
+            release(pBuffer);
+        }
+
+        return buffer;
+    }
+
+    /**
+     * Change pBuffer with another buffer of pSize. Data is not copied and
+     * pSize can be smaller than size of pBuffer
+     * 
+     * @return new allocated buffer, same buffer if pBuffer is exactly same
+     * as pSize
+     */
+    public byte[] change(byte[] pBuffer, int pSize) {
+        byte[] buffer = pBuffer;
+
+        // no alloc if proper size already
+        if (pBuffer.length != pSize) {
+            buffer = allocate(pSize);
+            release(pBuffer);
+        }
+        
         return buffer;
     }
 

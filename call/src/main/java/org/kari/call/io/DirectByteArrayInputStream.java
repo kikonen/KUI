@@ -12,14 +12,6 @@ import java.io.ByteArrayInputStream;
 public final class DirectByteArrayInputStream extends ByteArrayInputStream {
     private static final byte[] EMPTY_BUFFER = new byte[0];
 
-    public DirectByteArrayInputStream(byte[] pBuf, int pOffset, int pLength) {
-        super(pBuf, pOffset, pLength);
-    }
-
-    public DirectByteArrayInputStream(byte[] pBuf) {
-        super(pBuf);
-    }
-
     public DirectByteArrayInputStream() {
         super(EMPTY_BUFFER, 0, 0);
     }
@@ -29,10 +21,15 @@ public final class DirectByteArrayInputStream extends ByteArrayInputStream {
      * input stream is source some other reused input stream.
      */
     public void set(byte[] pBuf, int pOffset, int pLength) {
+        byte[] old = buf;
+        
         buf = pBuf;
         pos = pOffset;
         count = Math.min(pOffset + pLength, buf.length);
         mark = pOffset;
+
+        // NOTE KI can't release buffer; it may be owned by another location
+        // ex. DirectByteArrayOutputStream
     }
     
     /**

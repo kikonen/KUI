@@ -1,6 +1,5 @@
 package org.kari.call.io;
 
-import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -9,12 +8,14 @@ import java.io.InputStream;
  *
  * @author kari
  */
-public final class CountInputStream extends FilterInputStream {
+public final class CountInputStream extends InputStream {
+    private final InputStream mIn;
+	
     private long mCount;
     private long mMark;
     
     public CountInputStream(InputStream pIn) {
-        super(pIn);
+    	mIn = pIn;
     }
 
     public long getCount() {
@@ -42,7 +43,7 @@ public final class CountInputStream extends FilterInputStream {
 
     @Override
     public int read() throws IOException {
-        int value = in.read();
+        int value = mIn.read();
         if (value > 0) {
             mCount++;
         }
@@ -50,13 +51,50 @@ public final class CountInputStream extends FilterInputStream {
     }
 
     @Override
+    public int read(byte b[]) throws IOException {
+        return read(b, 0, b.length);
+    }
+
+    @Override
     public int read(byte[] pB, int pOff, int pLen) throws IOException {
-        int count = in.read(pB, pOff, pLen);
+        int count = mIn.read(pB, pOff, pLen);
         if (count > 0) {
             mCount += count;
         }
         return count;
     }
 
-    
+    @Override
+    public long skip(long n) throws IOException {
+        long count = mIn.skip(n);
+        if (count > 0) {
+            mCount += count;
+        }
+        return count;
+    }
+
+    @Override
+    public int available() throws IOException {
+        return mIn.available();
+    }
+
+    @Override
+    public void close() throws IOException {
+        mIn.close();
+    }
+
+    @Override
+    public void mark(int readlimit) {
+        mIn.mark(readlimit);
+    }
+
+    @Override
+    public void reset() throws IOException {
+        mIn.reset();
+    }
+
+    @Override
+    public boolean markSupported() {
+        return mIn.markSupported();
+    }
 }

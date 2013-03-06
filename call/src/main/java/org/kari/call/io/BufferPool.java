@@ -18,17 +18,23 @@ public final class BufferPool {
      * @author kari
      */
     static final class Slot {
-        private static final int BIG_BUFFER_INDEX = 100;
-        private static final int SMALL_RESERVE_COUNT = 100;
-        private static final int BIG_RESERVE_COUNT = 20;
-        
         private final int mIndex;
+        private final int mSize;
         private final int mMaxCount;
         private final List<byte[]> mBuffers = new ArrayList<byte[]>();
         
         Slot(int pIndex) {
             mIndex = pIndex;
-            mMaxCount = pIndex < BIG_BUFFER_INDEX ? SMALL_RESERVE_COUNT : BIG_RESERVE_COUNT;
+            mMaxCount = MAX_SLOT_SIZE  + 1 - pIndex;
+            
+            int idx = pIndex;
+            int size = 1;
+            while (idx > 0) {
+                size *= 2;
+                idx--;
+            }
+            mSize = size;
+
         }
 
         byte[] allocate() {
@@ -37,7 +43,7 @@ public final class BufferPool {
             if (!mBuffers.isEmpty()) {
                 buffer = mBuffers.remove(mBuffers.size() - 1);
             } else {
-                buffer = new byte[mIndex * BLOCK_SIZE];
+                buffer = new byte[mSize];
             }
             
             return buffer;
@@ -51,7 +57,8 @@ public final class BufferPool {
     }
     
     private static final BufferPool INSTANCE = new BufferPool();
-    
+    private static final byte[] EMPTY_BUFFER = new byte[0];
+
 
     /**
      * pools are in multiples of blocksize
@@ -61,8 +68,19 @@ public final class BufferPool {
     /**
      * Buffers above this range are not pooled; they should be rare peculiarity
      */
-    public static final int MAX_POOLED_BUFFER_SIZE = 10 * 1000 * 1000;
-
+    public static final int MAX_SLOT_SIZE = 24;
+    public static final int MAX_POOLED_BUFFER_SIZE;
+    
+    static {
+        int idx = MAX_SLOT_SIZE;
+        int size = 1;
+        while (idx > 0) {
+            size *= 2;
+            idx--;
+        }
+        MAX_POOLED_BUFFER_SIZE = size;
+    }
+    
     /**
      * Map of (slot, buffers)
      */
@@ -74,8 +92,9 @@ public final class BufferPool {
     }
 
     private int calculateSlotIndex(int pSize) {
-        int slot = pSize / BLOCK_SIZE;
-        if (pSize % BLOCK_SIZE != 0) {
+        int slot = 0;
+        while (pSize > 0) {
+            pSize >>= 1;
             slot++;
         }
         return slot;
@@ -95,7 +114,10 @@ public final class BufferPool {
      * Allocate buffer, which is at least pSize
      */
     public synchronized byte[] allocate(int pSize) {
-        if (pSize < MAX_POOLED_BUFFER_SIZE) {
+        if (pSize <= 0) {
+            return EMPTY_BUFFER;
+        }
+        if (pSize <= MAX_POOLED_BUFFER_SIZE) {
             return getSlot(pSize).allocate();
         }
         return new byte[pSize];
@@ -116,7 +138,7 @@ public final class BufferPool {
      * Allocate buffer, which is at least pSize
      */
     public synchronized void release(byte[] pBuffer) {
-        if (pBuffer.length < MAX_POOLED_BUFFER_SIZE) {
+        if (pBuffer.length > 0 && pBuffer.length <= MAX_POOLED_BUFFER_SIZE) {
             getSlot(pBuffer.length).release(pBuffer);
         }
     }

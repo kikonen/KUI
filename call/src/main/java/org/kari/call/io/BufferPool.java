@@ -3,6 +3,7 @@ package org.kari.call.io;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 
+import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,6 +13,19 @@ import java.util.List;
  * @author kari
  */
 public final class BufferPool {
+    /**
+     * If JVM does gc() for this element, then it's handled as trigger to
+     * flush whole buffer pool (i.e. JVM is low in memory).
+     *
+     * @author kari
+     */
+    static final class Flush {
+        @Override
+        protected void finalize() throws Throwable {
+            INSTANCE.clear();
+        }
+    }
+    
     /**
      * List of buffers for one slot
      *
@@ -78,10 +92,22 @@ public final class BufferPool {
      * Map of (slot, buffers)
      */
     private final TIntObjectMap<Slot> mBuffers = new TIntObjectHashMap<Slot>();
-    
+    private SoftReference<Flush> mFlush;
     
     public static BufferPool getInstance() {
         return INSTANCE;
+    }
+    
+    private BufferPool() {
+        clear();
+    }
+
+    /**
+     * Clear whole pool
+     */
+    public synchronized void clear() {
+        mBuffers.clear();
+        mFlush = new SoftReference<Flush>(new Flush());
     }
 
     /**

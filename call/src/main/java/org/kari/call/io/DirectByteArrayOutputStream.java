@@ -32,6 +32,22 @@ public final class DirectByteArrayOutputStream
         return buf;
     }
     
+    /**
+     * Reset internal buffer into pBuf
+     */
+    public void set(byte[] pBuf) {
+    	buf = pBuf;
+    	reset();
+    }
+    
+    /**
+     * Reset internal buffer into buffer of size pSize
+     */
+    public void set(int pSize) {
+    	buf = new byte[pSize];
+    	reset();
+    }
+    
     private void ensureCapacity(int minCapacity) {
         // overflow-conscious code
         if (minCapacity - buf.length > 0)

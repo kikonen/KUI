@@ -71,10 +71,7 @@ public final class TestClient {
                 TestServer.PORT, 
                 new ServiceRegistry(null),
                 new TestIOFactory(),
-                mSocketFactory,
-                COUNTER_ENABLED,
-                REUSE_STREAM_ENABLED,
-                COMPRESS_THRESHOLD);
+                mSocketFactory);
         call.setCounterEnabled(COUNTER_ENABLED);
         call.setTraceTrafficStatistics(TRACE_TRAFFIC_STATISTICS);
         call.setReuseObjectStream(REUSE_STREAM_ENABLED);

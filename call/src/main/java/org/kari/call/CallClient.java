@@ -60,10 +60,7 @@ public final class CallClient extends CallBase {
             final int pPort,
             final ServiceRegistry pRegistry,
             final IOFactory pIOFactory,
-            final CallClientSocketFactory pSocketFactory,
-            final boolean pCounterEnabled,
-            final boolean pReuseObjectStream,
-            final int pCallCompressThreshold) 
+            final CallClientSocketFactory pSocketFactory) 
     {
         super(pServerAddress, pPort, pRegistry, pIOFactory);
         

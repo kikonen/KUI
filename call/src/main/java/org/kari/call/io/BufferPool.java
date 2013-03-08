@@ -7,12 +7,21 @@ import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.Logger;
+import org.kari.call.CallConstants;
+
 /**
  * Manages byte buffers for call API
  *
  * @author kari
  */
 public final class BufferPool {
+    static {
+        BasicConfigurator.configure();
+    }
+    private static final Logger LOG = Logger.getLogger(CallConstants.BASE_PKG + ".io.pool");
+
     /**
      * If JVM does gc() for this element, then it's handled as trigger to
      * flush whole buffer pool (i.e. JVM is low in memory).
@@ -39,9 +48,14 @@ public final class BufferPool {
         
         Slot(int pIndex) {
             mIndex = pIndex;
-            mMaxCount = MAX_SLOT_SIZE  + 1 - pIndex;
-            
             mSize = calculateSize(pIndex);
+
+            int v = MAX_SLOT_SIZE + 3 - pIndex;
+            int maxCount = (int)(Math.log10(v) * v);
+            if (maxCount <= 0) {
+                maxCount = 1;
+            }
+            mMaxCount = maxCount;
         }
 
         byte[] allocate() {
@@ -86,6 +100,26 @@ public final class BufferPool {
             idx--;
         }
         MAX_POOLED_BUFFER_SIZE = size;
+        
+        if (false) {
+            for (int i = 0; i <= MAX_SLOT_SIZE; i++) {
+                int v = MAX_SLOT_SIZE + 2 - i;
+                int maxCount = (int)(Math.log(v)/Math.log10(v) * v);
+                LOG.info("A: " + i +  "=> " + maxCount);
+            }
+    
+            for (int i = 0; i <= MAX_SLOT_SIZE; i++) {
+                int v = MAX_SLOT_SIZE + 3 - i;
+                int maxCount = (int)(Math.log10(v) * v);
+                LOG.info("B: " + i +  "=> " + maxCount);
+            }
+    
+            for (int i = 0; i <= MAX_SLOT_SIZE; i++) {
+                int v = MAX_SLOT_SIZE + 2 - i;
+                int maxCount = (int)(Math.log(v) * v);
+                LOG.info("C: " + i +  "=> " + maxCount);
+            }
+        }
     }
     
     /**
@@ -99,7 +133,7 @@ public final class BufferPool {
     }
     
     private BufferPool() {
-        clear();
+        mFlush = new SoftReference<Flush>(new Flush());
     }
 
     /**
@@ -108,6 +142,7 @@ public final class BufferPool {
     public synchronized void clear() {
         mBuffers.clear();
         mFlush = new SoftReference<Flush>(new Flush());
+        LOG.info("flush cache");
     }
 
     /**
@@ -211,4 +246,7 @@ public final class BufferPool {
         }
     }
 
+    public static void main(String[] args) {
+        INSTANCE.allocate(22);
+    }
 }

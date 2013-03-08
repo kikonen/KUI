@@ -45,7 +45,7 @@ public final class ServerHandler extends Handler
     public void start() {
         if (isRunning()) {
             synchronized (this) {
-                mThread = new Thread(this, "ServerHandler-" + mSocket);
+                mThread = new Thread(this, "Handler-" + mSocket.getRemoteSocketAddress()+ "-" + mSocket.getLocalPort());
                 mThread.setDaemon(true);
                 mThread.start();
             }

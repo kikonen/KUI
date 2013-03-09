@@ -16,23 +16,34 @@ import org.kari.call.event.Result;
  */
 public final class ClientHandler extends Handler {
     private static final Logger LOG = Logger.getLogger(CallConstants.BASE_PKG + ".client_handler");
-    
+
     private Object mLastSessionId;
-    
+
 
     public ClientHandler(
-            Socket pSocket, 
-            CallClient pClient) 
-        throws IOException 
+            Socket pSocket,
+            CallClient pClient)
+        throws IOException
     {
-        super(pSocket, 
-                pClient.getIOFactory(), 
+        super(pSocket,
+                pClient.getIOFactory(),
                 pClient.isCounterEnabled(),
                 pClient.isTraceTrafficStatistics(),
                 pClient.isReuseObjectStream(),
                 pClient.getCompressThreshold());
     }
-    
+
+    /**
+     * <p>NOTE KI precaution against app, which somehow cause failure in
+     * proper release() logic of either handler or whole CallClient.
+     *
+     */
+    @Override
+    protected void finalize() throws Throwable {
+        kill();
+        free();
+    }
+
     public Object getLastSessionId() {
         return mLastSessionId;
     }
@@ -43,13 +54,13 @@ public final class ClientHandler extends Handler {
 
     /**
      * Invoke call, retrying call is upto caller
-     * 
+     *
      * @throws RetryCallException if retryable call error occurred
      */
-    public Object invoke(Call pCall) 
-        throws 
+    public Object invoke(Call pCall)
+        throws
             RetryCallException,
-            Throwable 
+            Throwable
     {
         Result result;
         final boolean TRACE = mTraceTrafficStatistics;
@@ -62,7 +73,7 @@ public final class ClientHandler extends Handler {
         try {
             resetByteOut();
             pCall.send(this, mOut);
-            
+
             // handle ack
             Result ack = readResult();
             if (ack.getType() == CallType.ACK_CALL_RECEIVED) {
@@ -90,32 +101,32 @@ public final class ClientHandler extends Handler {
                 if (TRACE) LOG.info("out=" + mCountOut.getMarkSize() + ", in=" + mCountIn.getMarkSize());
                 mCounter.add(mCountOut.getCount(), mCountIn.getCount());
             }
-            
+
             if (!mRunning) {
                 free();
             }
-            
+
             // discard possible oversized buffer
             resetByteOut();
         }
-        
+
         return result.getResult();
     }
 
     /**
      * Read single result from server
      */
-    private Result readResult() 
+    private Result readResult()
         throws IOException,
-            RemoteException, 
-            Exception 
+            RemoteException,
+            Exception
     {
         int code = mIn.read();
         if (code < 0) {
             // EOF
             throw new EOFException();
         }
-        
+
         CallType type = CallType.resolve(code);
         Result result = (Result)type.create();
         result.receive(this, mIn);

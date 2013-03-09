@@ -43,7 +43,7 @@ public final class StreamResult extends Result {
     protected void write(Handler pHandler, DataOutputStream pOut) 
         throws Exception 
     {
-        ObjectOutputStream oo = pHandler.getIOFactory().createObjectOutput(pOut, StreamCall.COMPRESS);
+        ObjectOutputStream oo = pHandler.getIOFactory().createObjectOutput(pOut);
         
         oo.writeObject(mResult);
         
@@ -55,7 +55,7 @@ public final class StreamResult extends Result {
         throws IOException,
             ClassNotFoundException 
     {
-        ObjectInputStream oi = pHandler.getIOFactory().createObjectInput(pIn, StreamCall.COMPRESS);
+        ObjectInputStream oi = pHandler.getIOFactory().createObjectInput(pIn);
         
         mResult = oi.readObject();
     }

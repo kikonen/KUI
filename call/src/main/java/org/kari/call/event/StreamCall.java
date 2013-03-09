@@ -16,11 +16,6 @@ import org.kari.call.Handler;
  */
 public final class StreamCall extends ServiceCall {
     /**
-     * Compression is preferred in out/in
-     */
-    public static final boolean COMPRESS = true;
-    
-    /**
      * For decoding call
      */
     public StreamCall() {
@@ -51,7 +46,7 @@ public final class StreamCall extends ServiceCall {
     protected void write(Handler pHandler, DataOutputStream pOut) 
         throws Exception
     {
-        ObjectOutputStream oo = pHandler.getIOFactory().createObjectOutput(pOut, COMPRESS);
+        ObjectOutputStream oo = pHandler.getIOFactory().createObjectOutput(pOut);
         writeObjectOut(oo);
         oo.flush();
     }
@@ -61,7 +56,7 @@ public final class StreamCall extends ServiceCall {
         throws IOException,
             ClassNotFoundException
     {
-        ObjectInputStream oi = pHandler.getIOFactory().createObjectInput(pIn, COMPRESS);
+        ObjectInputStream oi = pHandler.getIOFactory().createObjectInput(pIn);
         readObjectIn(oi);
     }
     

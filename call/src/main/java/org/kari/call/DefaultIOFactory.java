@@ -5,8 +5,6 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.GZIPOutputStream;
 
 import org.kari.call.io.IOFactory;
 
@@ -27,27 +25,17 @@ public final class DefaultIOFactory implements IOFactory {
     public static final IOFactory INSTANCE = new DefaultIOFactory();
 
     @Override
-    public ObjectOutputStream createObjectOutput(
-            OutputStream pOut,
-            boolean pCompressed) 
+    public ObjectOutputStream createObjectOutput(OutputStream pOut) 
         throws IOException 
     {
-        OutputStream out = pCompressed
-            ? new GZIPOutputStream(pOut, true) 
-            : pOut;
-        return new ObjectOutputStream(out);
+        return new ObjectOutputStream(pOut);
     }
 
     @Override
-    public ObjectInputStream createObjectInput(
-            InputStream pIn,
-            boolean pCompressed) 
+    public ObjectInputStream createObjectInput(InputStream pIn) 
         throws IOException 
     {
-        InputStream in = pCompressed
-            ? new GZIPInputStream(pIn)
-            : pIn;
-        return new ObjectInputStream(in);
+        return new ObjectInputStream(pIn);
     }
     
 }

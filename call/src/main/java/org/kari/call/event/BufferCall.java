@@ -215,7 +215,7 @@ public final class BufferCall extends ServiceCall {
                 }
                 result = pHandler.createObjectIn(totalCount);
             } else {
-                result = pHandler.getIOFactory().createObjectInput(pIn, false);
+                result = pHandler.getIOFactory().createObjectInput(pIn);
             }
         }
         

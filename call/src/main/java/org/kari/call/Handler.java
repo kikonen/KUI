@@ -203,7 +203,7 @@ public abstract class Handler {
     {
         return mReuseObjectStream 
             ? getByteObjectOut()
-            : mIOFactory.createObjectOutput(getByteOut(), false);
+            : mIOFactory.createObjectOutput(getByteOut());
     }
 
     /**
@@ -213,7 +213,7 @@ public abstract class Handler {
         throws IOException
     {
         if (mByteObjectIn == null) {
-            mByteObjectIn = mIOFactory.createObjectInput(mByteIn, false);
+            mByteObjectIn = mIOFactory.createObjectInput(mByteIn);
         }
         return mByteObjectIn;
     }
@@ -231,7 +231,7 @@ public abstract class Handler {
 
         return mReuseObjectStream
             ? getByteObjectIn()
-            : mIOFactory.createObjectInput(mByteIn, false);
+            : mIOFactory.createObjectInput(mByteIn);
     }
 
     /**
@@ -241,7 +241,7 @@ public abstract class Handler {
         throws IOException
     {
         if (mByteObjectOut == null) {
-            mByteObjectOut = mIOFactory.createObjectOutput(getByteOut(), false);
+            mByteObjectOut = mIOFactory.createObjectOutput(getByteOut());
         }
         return mByteObjectOut;
     }

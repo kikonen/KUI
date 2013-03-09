@@ -16,13 +16,9 @@ import java.io.OutputStream;
  * @author kari
  */
 public interface IOFactory {
-    ObjectOutputStream createObjectOutput(
-            OutputStream pOut, 
-            boolean pCompressed)
+    ObjectOutputStream createObjectOutput(OutputStream pOut)
         throws IOException;
     
-    ObjectInputStream createObjectInput(
-            InputStream pIn, 
-            boolean pCompressed)
+    ObjectInputStream createObjectInput(InputStream pIn)
         throws IOException; 
 }

@@ -11,10 +11,8 @@ import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.util.IdentityHashMap;
 
-import org.kari.call.event.Base;
 import org.kari.call.event.BufferCall;
 import org.kari.call.event.Call;
-import org.kari.call.event.StreamCall;
 
 /**
  * Proxy for remote calls
@@ -75,28 +73,18 @@ public final class CallHandler implements InvocationHandler {
         int retryCount = 0;
         while (retryCount < RETRY_COUNT) {
             retryCount++;
-            ClientHandler handler = mClient.reserve();
+            Object sessionId = mSessionProvider.getSessionId();
+            ClientHandler handler = mClient.reserve(sessionId);
             try {
-                Object sessionId = mSessionProvider.getSessionId();
                 boolean sessionIdChanged = sessionId != handler.getLastSessionId();
                 handler.setLastSessionId(sessionId);
                 
-                Call call;
-                if (Base.BUFFER_CALL) {
-                    call = new BufferCall(
-                            sessionId,
-                            sessionIdChanged,
-                            mServiceUUID, 
-                            getMethodId(mServiceUUID, pMethod), 
-                            pArgs);
-                } else {
-                    call = new StreamCall(
-                            sessionId,
-                            sessionIdChanged,
-                            mServiceUUID, 
-                            getMethodId(mServiceUUID, pMethod), 
-                            pArgs);
-                }
+                Call call = new BufferCall(
+                        sessionId,
+                        sessionIdChanged,
+                        mServiceUUID, 
+                        getMethodId(mServiceUUID, pMethod), 
+                        pArgs);
                 
                 result = handler.invoke(call);
                 retryCount = RETRY_COUNT;

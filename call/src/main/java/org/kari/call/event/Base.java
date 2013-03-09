@@ -21,11 +21,6 @@ public abstract class Base {
     }
     
     /**
-     * Is buffer or stream call used
-     */
-    public static final boolean BUFFER_CALL = true;
-
-    /**
      * Read data fully from pIn
      */
     public static void readFully(

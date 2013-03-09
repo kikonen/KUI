@@ -9,6 +9,11 @@ jar {
     }
 }
 
+compileJava {
+	options.debug = false
+	options.encoding = 'UTF-8'
+}
+
 repositories {
     mavenCentral()
 }

@@ -28,12 +28,13 @@ public final class TestClient {
     public static final boolean COUNTER_ENABLED = true;
     public static final boolean REUSE_STREAM_ENABLED = true;
     public static final int COMPRESS_THRESHOLD = BufferCall.DEFAULT_COMPRESS_THRESHOLD;
-    
+
     public static final boolean TRACE = true;
     public static final boolean TRACE_TRAFFIC_STATISTICS = true;
+    public static final boolean RESET_TICKET = false;
     public static final int TEST_COUNT = 1;
     public static final int THREAD_COUNT = 1;
-    
+
 
     public static void main(String[] args) {
         try {
@@ -44,11 +45,11 @@ public final class TestClient {
             System.exit(-1);
         }
     }
-    
+
     private final CallClientSocketFactory mSocketFactory = new CallClientSocketFactory() {
         @Override
         public Socket createSocket(String pServerAddress, int pPort)
-            throws IOException 
+            throws IOException
         {
             return new Socket(pServerAddress, pPort);
         }
@@ -59,13 +60,13 @@ public final class TestClient {
 
 
     private void start(String[] pArgs) throws Exception {
-        String host = pArgs.length > 0 
+        String host = pArgs.length > 0
             ? pArgs[0]
             : "localhost";
-            
+
         CallClient call = new CallClient(
-                host, 
-                TestServer.PORT, 
+                host,
+                TestServer.PORT,
                 new ServiceRegistry(null),
                 new TestIOFactory(),
                 mSocketFactory);
@@ -73,7 +74,7 @@ public final class TestClient {
         call.setTraceTrafficStatistics(TRACE_TRAFFIC_STATISTICS);
         call.setReuseObjectStream(REUSE_STREAM_ENABLED);
         call.setCompressThreshold(COMPRESS_THRESHOLD);
-        
+
         final Set<Thread> running = new THashSet<Thread>();
 
         final int testCount = TEST_COUNT;
@@ -81,7 +82,7 @@ public final class TestClient {
 
         for (int i = 0; i < threadCount; i++) {
             Thread t = new Thread(
-                    new TestRunner(call, running, testCount), 
+                    new TestRunner(call, running, testCount),
                     "test-" + i);
             t.setDaemon(true);
             running.add(t);
@@ -92,7 +93,7 @@ public final class TestClient {
                 t.start();
             }
         }
-        
+
         synchronized (running) {
             while (!running.isEmpty()) {
                 running.wait();
@@ -100,7 +101,7 @@ public final class TestClient {
         }
     }
 
-    
+
     private byte[] getRandomHugeBlock() throws IOException {
         if (mRandomHugeBlock == null) {
             DirectByteArrayOutputStream buffer = new DirectByteArrayOutputStream();
@@ -171,15 +172,15 @@ public final class TestClient {
                 synchronized (mRunning) {
                     int x = 0;
                 }
-                
-                boolean reset = false;
-                
+
+                boolean resetTicket = RESET_TICKET;
+
                 for (int i = 0; i < mTestCount; i++) {
-                    if (reset) {
+                    if (resetTicket) {
                         resetTicket();
                     }
                     runTests(mService);
-                    
+
                     if (i < mTestCount - 1) {
                         try {
                             Thread.sleep(100);
@@ -195,13 +196,13 @@ public final class TestClient {
                 }
             }
         }
-        
+
         private void runTests(TestService service) {
             int idx = 0;
             if (TRACE) LOG.info("TEST " + (idx++) + " - testSimple");
             try {
                 TestResult result = service.testSimple(new TestParam("hello"));
-                if (TRACE) LOG.info("response: " + result);    
+                if (TRACE) LOG.info("response: " + result);
             } catch (Exception e) {
                 LOG.error("Failed", e);
             }
@@ -209,7 +210,7 @@ public final class TestClient {
             if (TRACE) LOG.info("TEST " + (idx++) + " - testSimple-cachedSessionId");
             try {
                 TestResult result = service.testSimple(new TestParam("hello"));
-                if (TRACE) LOG.info("response: " + result);    
+                if (TRACE) LOG.info("response: " + result);
             } catch (Exception e) {
                 LOG.error("Failed", e);
             }
@@ -217,31 +218,31 @@ public final class TestClient {
             if (TRACE) LOG.info("TEST " + (idx++) + " - testVoidParam");
             try {
                 TestResult result = service.testVoidParam();
-                if (TRACE) LOG.info("response: " + result);    
+                if (TRACE) LOG.info("response: " + result);
             } catch (Exception e) {
                 LOG.error("Failed", e);
             }
-        
+
             if (TRACE) LOG.info("TEST " + (idx++) + " - testNullResult");
             try {
                 TestResult result = service.testNullResult(new TestParam("hello"));
-                if (TRACE) LOG.info("response: " + result);    
+                if (TRACE) LOG.info("response: " + result);
             } catch (Exception e) {
                 LOG.error("Failed", e);
             }
-        
+
             if (TRACE) LOG.info("TEST " + (idx++) + " - testNullParam");
             try {
                 TestResult result = service.testNullParam(null);
-                if (TRACE) LOG.info("response: " + result);    
+                if (TRACE) LOG.info("response: " + result);
             } catch (Exception e) {
                 LOG.error("Failed", e);
             }
-        
+
             if (TRACE) LOG.info("TEST " + (idx++) + " - testVoidResult");
             try {
                 service.testVoidResult(new TestParam("hello"));
-                if (TRACE) LOG.info("response: VOID");    
+                if (TRACE) LOG.info("response: VOID");
             } catch (Exception e) {
                 LOG.error("Failed", e);
             }
@@ -250,7 +251,7 @@ public final class TestClient {
             try {
                 byte[] in = getBigBlock();
                 byte[] out = service.testBigCall(in);
-                if (TRACE) LOG.info("response: " + out.length);    
+                if (TRACE) LOG.info("response: " + out.length);
             } catch (Exception e) {
                 LOG.error("Failed", e);
             }
@@ -259,7 +260,7 @@ public final class TestClient {
             try {
                 byte[] buffer = getRandomHugeBlock();
                 byte[] out = service.testBigCall(buffer);
-                if (TRACE) LOG.info("response: " + out.length);    
+                if (TRACE) LOG.info("response: " + out.length);
             } catch (Exception e) {
                 LOG.error("Failed", e);
             }
@@ -267,7 +268,7 @@ public final class TestClient {
             if (TRACE) LOG.info("TEST " + (idx++) + " - testError");
             try {
                 TestResult result = service.testError(new TestParam("hello"));
-                if (TRACE) LOG.info("response: " + result);    
+                if (TRACE) LOG.info("response: " + result);
             } catch (TestException e) {
                 if (TRACE) LOG.info("Expected Error", e);
             } catch (Exception e) {

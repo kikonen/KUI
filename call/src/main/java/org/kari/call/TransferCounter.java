@@ -8,9 +8,9 @@ package org.kari.call;
  * @author kari
  */
 public final class TransferCounter {
-    static final TransferCounter INSTANCE = new TransferCounter();
-    
-    
+    public static final TransferCounter INSTANCE = new TransferCounter();
+
+
     private long mOutBytes;
     private long mInBytes;
     private long mCalls;
@@ -25,21 +25,21 @@ public final class TransferCounter {
         mInBytes += pInBytes;
         mCalls++;
     }
-    
+
     /**
      * <p>MUST sync to this externally
      */
     public long getOutBytes() {
         return mOutBytes;
     }
-    
+
     /**
      * <p>MUST sync to this externally
      */
     public long getInBytes() {
         return mInBytes;
     }
-    
+
     /**
      * <p>MUST sync to this externally
      */

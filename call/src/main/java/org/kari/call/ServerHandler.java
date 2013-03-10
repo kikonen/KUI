@@ -14,28 +14,28 @@ import org.kari.call.event.Result;
  *
  * @author kari
  */
-public final class ServerHandler extends Handler 
+public final class ServerHandler extends Handler
     implements
         Runnable
 {
     private static final Logger LOG = Logger.getLogger(CallConstants.BASE_PKG + ".server_handler");
     private static final int PROTOCOL_STACK_SKIP = 2;
     private static final int INVOKE_STACK_SKIP = 3;
-    
+
     private final CallServer mServer;
-    
+
     private Thread mThread;
     private Object mLastSessionId;
 
-    
+
     public ServerHandler(CallServer pServer, Socket pSocket) throws IOException {
-        super(pSocket, 
-                pServer.getIOFactory(), 
+        super(pSocket,
+                pServer.getIOFactory(),
                 pServer.isCounterEnabled(),
                 pServer.isTraceTrafficStatistics(),
                 pServer.isReuseObjectStream(),
                 pServer.getCompressThreshold());
-    
+
         mServer = pServer;
     }
 
@@ -51,11 +51,11 @@ public final class ServerHandler extends Handler
             }
         }
     }
-    
+
     @Override
     public void kill() {
         super.kill();
-        
+
         synchronized (this) {
             Thread thread = mThread;
             mThread = null;
@@ -87,7 +87,7 @@ public final class ServerHandler extends Handler
                     waiting = true;
                     int code = mIn.read();
                     waiting = false;
-                    
+
                     if (code < 0) {
                         // EOF
                         mRunning = false;
@@ -135,12 +135,11 @@ public final class ServerHandler extends Handler
             // protocol
             suicide = true;
         }
-        
+
         if (call != null) {
             boolean received = false;
             boolean acked = false;
             try {
-                resetByteOut();
                 call.receive(this, mIn);
                 mLastSessionId = call.getSessionId();
                 received = true;
@@ -164,7 +163,7 @@ public final class ServerHandler extends Handler
                     suicide = true;
                 }
             }
-            
+
             if (acked) {
                 try {
                     // execute after sending ack
@@ -177,7 +176,7 @@ public final class ServerHandler extends Handler
                 }
             }
         }
-        
+
         try {
             result.send(this, mOut);
         } catch (Exception e) {
@@ -197,5 +196,5 @@ public final class ServerHandler extends Handler
             }
         }
     }
-    
+
 }

@@ -71,7 +71,6 @@ public final class ClientHandler extends Handler {
             mCountIn.markCount();
         }
         try {
-            resetByteOut();
             pCall.send(this, mOut);
 
             // handle ack

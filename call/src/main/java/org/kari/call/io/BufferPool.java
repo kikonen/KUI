@@ -17,9 +17,6 @@ import org.kari.call.CallConstants;
  * @author kari
  */
 public final class BufferPool {
-    static {
-        BasicConfigurator.configure();
-    }
     private static final Logger LOG = Logger.getLogger(CallConstants.BASE_PKG + ".io.pool");
 
     /**
@@ -34,7 +31,7 @@ public final class BufferPool {
             INSTANCE.clear();
         }
     }
-    
+
     /**
      * List of buffers for one slot
      *
@@ -45,7 +42,7 @@ public final class BufferPool {
         private final int mSize;
         private final int mMaxCount;
         private final List<byte[]> mBuffers = new ArrayList<byte[]>();
-        
+
         Slot(int pIndex) {
             mIndex = pIndex;
             mSize = calculateSize(pIndex);
@@ -60,23 +57,23 @@ public final class BufferPool {
 
         byte[] allocate() {
             byte[] buffer;
-            
+
             if (!mBuffers.isEmpty()) {
                 buffer = mBuffers.remove(mBuffers.size() - 1);
             } else {
                 buffer = new byte[mSize];
             }
-            
+
             return buffer;
         }
-        
+
         void release(byte[] pBuffer) {
             if (mBuffers.size() < mMaxCount) {
                 mBuffers.add(pBuffer);
             }
         }
     }
-    
+
     public static final BufferPool INSTANCE = new BufferPool();
     private static final byte[] EMPTY_BUFFER = new byte[0];
 
@@ -85,13 +82,13 @@ public final class BufferPool {
      * pools are in multiples of blocksize
      */
     public static final int BLOCK_SIZE = 8192;
-    
+
     /**
      * Buffers above this range are not pooled; they should be rare peculiarity
      */
     public static final int MAX_SLOT_SIZE = 24;
     public static final int MAX_POOLED_BUFFER_SIZE;
-    
+
     static {
         int idx = MAX_SLOT_SIZE;
         int size = 1;
@@ -100,20 +97,20 @@ public final class BufferPool {
             idx--;
         }
         MAX_POOLED_BUFFER_SIZE = size;
-        
+
         if (false) {
             for (int i = 0; i <= MAX_SLOT_SIZE; i++) {
                 int v = MAX_SLOT_SIZE + 2 - i;
                 int maxCount = (int)(Math.log(v)/Math.log10(v) * v);
                 LOG.info("A: " + i +  "=> " + maxCount);
             }
-    
+
             for (int i = 0; i <= MAX_SLOT_SIZE; i++) {
                 int v = MAX_SLOT_SIZE + 3 - i;
                 int maxCount = (int)(Math.log10(v) * v);
                 LOG.info("B: " + i +  "=> " + maxCount);
             }
-    
+
             for (int i = 0; i <= MAX_SLOT_SIZE; i++) {
                 int v = MAX_SLOT_SIZE + 2 - i;
                 int maxCount = (int)(Math.log(v) * v);
@@ -121,17 +118,17 @@ public final class BufferPool {
             }
         }
     }
-    
+
     /**
      * Map of (slot, buffers)
      */
     private final TIntObjectMap<Slot> mBuffers = new TIntObjectHashMap<Slot>();
     private SoftReference<Flush> mFlush;
-    
+
     public static BufferPool getInstance() {
         return INSTANCE;
     }
-    
+
     private BufferPool() {
         mFlush = new SoftReference<Flush>(new Flush());
     }
@@ -167,15 +164,15 @@ public final class BufferPool {
             remaining >>= 1;
             slot++;
         }
-        
-        final int size = calculateSize(slot); 
+
+        final int size = calculateSize(slot);
         if (size != pSize) {
             slot++;
         }
-        
+
         return slot;
     }
-    
+
     private Slot getSlot(int pSize) {
         int idx = calculateSlotIndex(pSize);
         Slot slot = mBuffers.get(idx);
@@ -202,12 +199,12 @@ public final class BufferPool {
     /**
      * Grow allocated buffer, which is at least pSize. Old buffer is released
      * and data is copied into new reserved buffer.
-     * 
+     *
      * @return new allocated buffer, pBuffer if it was already big enough
      */
     public byte[] grow(byte[] pBuffer, int pSize) {
         byte[] buffer = pBuffer;
-        
+
         // no alloc if buffer is already big enough
         if (pBuffer.length < pSize) {
             buffer = allocate(pSize);
@@ -221,7 +218,7 @@ public final class BufferPool {
     /**
      * Change pBuffer with another buffer of pSize. Data is not copied and
      * pSize can be smaller than size of pBuffer
-     * 
+     *
      * @return new allocated buffer, same buffer if pBuffer is exactly same
      * as pSize
      */
@@ -233,7 +230,7 @@ public final class BufferPool {
             buffer = allocate(pSize);
             release(pBuffer);
         }
-        
+
         return buffer;
     }
 
@@ -247,6 +244,7 @@ public final class BufferPool {
     }
 
     public static void main(String[] args) {
+        BasicConfigurator.configure();
         INSTANCE.allocate(22);
     }
 }

@@ -8,7 +8,7 @@ import org.kari.call.CallConstants;
  *
  * @author kari
  */
-public abstract class Result extends Base {
+public abstract class Result extends CallEvent {
     public static final Logger LOG = Logger.getLogger(CallConstants.BASE_PKG + ".result");
     
     

@@ -15,20 +15,20 @@ import org.kari.call.Handler;
  *
  * @author kari
  */
-public abstract class Base {
+public abstract class CallEvent {
     static {
         CallType.initCache();
     }
-    
+
     /**
      * Read data fully from pIn
      */
     public static void readFully(
-            InputStream pIn, 
-            byte[] pBuffer, 
-            int pOffset, 
+            InputStream pIn,
+            byte[] pBuffer,
+            int pOffset,
             int pLen)
-        throws IOException 
+        throws IOException
     {
         if (pLen < 0) {
             throw new IndexOutOfBoundsException();
@@ -43,47 +43,49 @@ public abstract class Base {
         }
     }
 
-    
-    protected Base() {
+
+    protected CallEvent() {
         // nothing
     }
-    
+
     public abstract CallType getType();
-    
+
     /**
      * Write type and call {@link #write(DataOutputStream)}
      */
-    public final void send(Handler pHandler, DataOutputStream pOut) 
+    public final void send(Handler pHandler, DataOutputStream pOut)
         throws Exception
     {
         pHandler.getByteOut().reset();
-        
+
         pOut.write(getType().mCode);
         write(pHandler, pOut);
-        
+
         pOut.flush();
     }
-    
+
     /**
      * Read header and call {@link #read(DataOutputStream)}
      */
-    public final void receive(Handler pHandler, DataInputStream pIn) 
+    public final void receive(Handler pHandler, DataInputStream pIn)
         throws Exception
     {
+        pHandler.getByteOut().reset();
+
         read(pHandler, pIn);
     }
-    
+
     /**
      * Write to stream. No need to call flush, send() will trigger it
      */
-    protected abstract void write(Handler pHandler, DataOutputStream pOut) 
+    protected abstract void write(Handler pHandler, DataOutputStream pOut)
         throws Exception;
-    
+
     /**
      * read from stream
      */
-    protected abstract void read(Handler pHandler, DataInputStream pIn) 
+    protected abstract void read(Handler pHandler, DataInputStream pIn)
         throws IOException,
             ClassNotFoundException;
-    
+
 }

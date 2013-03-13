@@ -2,7 +2,6 @@ package org.kari.call;
 
 import gnu.trove.set.hash.THashSet;
 
-import java.io.IOException;
 import java.net.Socket;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
@@ -28,6 +27,7 @@ public final class CallClient extends CallBase {
         CallType.initCache();
     }
 
+    private final ClientKey mClienKey;
     private final CallClientSocketFactory mSocketFactory;
 
     /**
@@ -35,9 +35,10 @@ public final class CallClient extends CallBase {
      * were not returned back to pool properly
      */
     private final Set<ClientHandler> mHandlers = new THashSet<ClientHandler>();
+
     /**
      * Currently available handlers:
-     * 
+     *
      * <p>Map of (sessionId, List of (handler))
      */
     private final IdentityHashMap<Object, List<ClientHandler>> mAvailable =
@@ -56,7 +57,7 @@ public final class CallClient extends CallBase {
     /**
      * @param pServerAddress Either actual IP/host or application specific
      * identity for server addresses
-     * 
+     *
      * @param pSocketFactory if null default (plain socket) is used
      * @param pIOFactory if null default is used
      * @param pRegistry If null new registry is created with default resolver
@@ -77,13 +78,20 @@ public final class CallClient extends CallBase {
                 ? pSocketFactory
                         : DefaultCallClientSocketFactory.INSTANCE;
 
+        mClienKey = new ClientKey();
     }
 
+    /**
+     * Key to identify handlers for asynchronous calls
+     */
+    public ClientKey getClientKey() {
+        return mClienKey;
+    }
 
     /**
      * Retrieve handler for pSessionId and cleanup possible dead handlers
      * (socket died, etc.)
-     * 
+     *
      * @return null if not found
      */
     private ClientHandler getBySession(Object pSessionId) {
@@ -155,25 +163,31 @@ public final class CallClient extends CallBase {
     private ClientHandler newHandler()
             throws RemoteException
             {
-        ClientHandler handler;
+        ClientHandler handler = null;
         try {
             Socket socket = mSocketFactory.createSocket(
                     getServerAddress(),
                     getPort());
 
             handler = new ClientHandler(socket, this);
+            handler.handshake();
+
             mHandlers.add(handler);
-        } catch (IOException e) {
+        } catch (Throwable e) {
+            if (handler != null) {
+                handler.kill();
+                handler.free();
+            }
             throw new RemoteException("Failed to connect server", e);
         }
         return handler;
-            }
+    }
 
     /**
      * Get available handler from pool of handlers or create new handler.
      * Reserved handler *MUST* be returned back to pool after use to avoid
      * memory leaks.
-     * 
+     *
      * <p>USAGE: use try-finally
      * <pre>
      * ClientHandler handler = client.reserve();
@@ -183,11 +197,11 @@ public final class CallClient extends CallBase {
      *     client.release(handler);
      * }
      * </pre>
-     * 
+     *
      * @param pSessionId Associated session. Existing handler usinsg pSessionId
      * is preferably get instead of another, to improve "not changed" sessionId
      * logic in call serialization.
-     * 
+     *
      * @throws RemoteException if cannot connect to server
      */
     public synchronized ClientHandler reserve(Object pSessionId) throws RemoteException {
@@ -238,7 +252,7 @@ public final class CallClient extends CallBase {
      * Close all handlers to enforce restart of connection. Relevant, for
      * example, if server-address is abstraction of actual host IP, and
      * restart of connection is needed after "server URL" change.
-     * 
+     *
      * @param pForceKill if true currently in-use connections are forcefully
      * killed, otherwise those connections are closed softly (i.e. after
      * they are released back to pool). Using force should be avoided, since

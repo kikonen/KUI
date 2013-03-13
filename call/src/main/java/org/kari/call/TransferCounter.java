@@ -9,42 +9,54 @@ package org.kari.call;
  */
 public final class TransferCounter {
     static final TransferCounter INSTANCE = new TransferCounter();
-    
-    
+
+
     private long mOutBytes;
     private long mInBytes;
-    private long mCalls;
+    private long mInEvents;
+    private long mOutEvents;
 
 
     public static TransferCounter getInstance() {
         return INSTANCE;
     }
 
-    public synchronized void add(long pOutBytes, long pInBytes) {
-        mOutBytes += pOutBytes;
+    public synchronized void addIn(long pInBytes) {
         mInBytes += pInBytes;
-        mCalls++;
+        mInEvents++;
     }
-    
+
+    public synchronized void addOut(long pOutBytes) {
+        mOutBytes += pOutBytes;
+        mOutEvents++;
+    }
+
     /**
      * <p>MUST sync to this externally
      */
     public long getOutBytes() {
         return mOutBytes;
     }
-    
+
     /**
      * <p>MUST sync to this externally
      */
     public long getInBytes() {
         return mInBytes;
     }
-    
+
     /**
      * <p>MUST sync to this externally
      */
-    public long getCalls() {
-        return mCalls;
+    public long getInEvents() {
+        return mInEvents;
+    }
+
+    /**
+     * <p>MUST sync to this externally
+     */
+    public long getOutEvents() {
+        return mOutEvents;
     }
 }
 

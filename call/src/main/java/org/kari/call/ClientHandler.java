@@ -1,12 +1,12 @@
 package org.kari.call;
 
-import java.io.EOFException;
 import java.io.IOException;
 import java.net.Socket;
 import java.rmi.RemoteException;
 
 import org.apache.log4j.Logger;
 import org.kari.call.event.Call;
+import org.kari.call.event.Register;
 import org.kari.call.event.Result;
 
 /**
@@ -16,6 +16,8 @@ import org.kari.call.event.Result;
  */
 public final class ClientHandler extends Handler {
     private static final Logger LOG = Logger.getLogger(CallConstants.BASE_PKG + ".client_handler");
+
+    private final ClientKey mClientKey;
 
     private Object mLastSessionId;
 
@@ -31,6 +33,7 @@ public final class ClientHandler extends Handler {
                 pClient.isTraceTrafficStatistics(),
                 pClient.isReuseObjectStream(),
                 pClient.getCompressThreshold());
+        mClientKey = pClient.getClientKey();
     }
 
     /**
@@ -44,12 +47,23 @@ public final class ClientHandler extends Handler {
         free();
     }
 
+    public ClientKey getClientKey() {
+        return mClientKey;
+    }
+
     public Object getLastSessionId() {
         return mLastSessionId;
     }
 
     public void setLastSessionId(Object pLastSessionId) {
         mLastSessionId = pLastSessionId;
+    }
+
+    /**
+     * Handshake for asynchronous call handler
+     */
+    public void handshake() throws Throwable {
+        Register.INSTANCE.send(this, mOut);
     }
 
     /**
@@ -63,27 +77,22 @@ public final class ClientHandler extends Handler {
             Throwable
     {
         Result result;
-        final boolean TRACE = mTraceTrafficStatistics;
 
         boolean acked = false;
-        if (mCounterEnabled) {
-            mCountOut.markCount();
-            mCountIn.markCount();
-        }
         try {
             resetByteOut();
-            pCall.send(this, mOut);
+            writeEvent(pCall);
 
             // handle ack
             Result ack = readResult();
-            if (ack.getType() == CallType.ACK_CALL_RECEIVED) {
-                acked = true;
-                result = readResult();
-            } else {
+            if (ack.getType() != CallType.ACK_CALL_RECEIVED) {
                 // error if not ack
                 ack.getResult();
                 result = null;
             }
+
+            acked = true;
+            result = readResult();
         } catch (Throwable e) {
             // suicide; failed write/read socket or invalid result type received
             // thus input is already in invalid state
@@ -91,17 +100,13 @@ public final class ClientHandler extends Handler {
             //    succesfully to server, then server may have actually handled it.
             //    In that case transparent "retry" is not possible
             kill();
+
             if (acked) {
                 throw new RemoteException("Failed to access server", e);
             } else {
-                throw new RetryCallException("Retry call", e);
+                throw new RetryCallException("Reconnect", e);
             }
         } finally {
-            if (mCounterEnabled) {
-                if (TRACE) LOG.info("out=" + mCountOut.getMarkSize() + ", in=" + mCountIn.getMarkSize());
-                mCounter.add(mCountOut.getCount(), mCountIn.getCount());
-            }
-
             if (!mRunning) {
                 free();
             }
@@ -113,24 +118,5 @@ public final class ClientHandler extends Handler {
         return result.getResult();
     }
 
-    /**
-     * Read single result from server
-     */
-    private Result readResult()
-        throws IOException,
-            RemoteException,
-            Exception
-    {
-        int code = mIn.read();
-        if (code < 0) {
-            // EOF
-            throw new EOFException();
-        }
-
-        CallType type = CallType.resolve(code);
-        Result result = (Result)type.create();
-        result.receive(this, mIn);
-        return result;
-    }
 }
 

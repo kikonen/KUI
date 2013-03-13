@@ -5,11 +5,13 @@ import gnu.trove.map.hash.TIntObjectHashMap;
 import java.rmi.RemoteException;
 
 import org.kari.call.event.AckCallReceived;
-import org.kari.call.event.Base;
+import org.kari.call.event.AsyncRegister;
 import org.kari.call.event.BufferCall;
 import org.kari.call.event.BufferResult;
+import org.kari.call.event.CallEvent;
 import org.kari.call.event.ErrorResult;
 import org.kari.call.event.NullResult;
+import org.kari.call.event.Register;
 import org.kari.call.event.StreamCall;
 import org.kari.call.event.StreamResult;
 
@@ -18,21 +20,23 @@ public enum CallType {
     UNKNOWN(0, null),
     STREAM_CALL(1, StreamCall.class),
     STREAM_RESULT(10, StreamResult.class),
-    
+
     BUFFER_CALL(20, BufferCall.class),
     BUFFER_RESULT(21, BufferResult.class),
 
     RESULT_NULL(30, NullResult.class),
+    REGISTER(31, AsyncRegister.class),
+    ASYNC_REGISTER(32, AsyncRegister.class),
     ERROR(50, ErrorResult.class),
     ACK_CALL_RECEIVED(100, AckCallReceived.class);
-    
+
     public final byte mCode;
-    public final Class<? extends Base> mClass;
-    
+    public final Class<? extends CallEvent> mClass;
+
     private static TIntObjectHashMap<CallType> mCache;
 
-    
-    private CallType(int pCode, Class<? extends Base> pClass) {
+
+    private CallType(int pCode, Class<? extends CallEvent> pClass) {
         mCode = (byte)pCode;
         mClass = pClass;
     }
@@ -55,14 +59,16 @@ public enum CallType {
         CallType result = mCache.get(pCode);
         return result != null ? result : UNKNOWN;
     }
-    
-    public Base create() throws RemoteException {
+
+    public CallEvent create() throws RemoteException {
         if (this == RESULT_NULL) {
             return NullResult.INSTANCE;
-        }else if (this == ACK_CALL_RECEIVED) {
+        } else if (this == REGISTER) {
+            return Register.INSTANCE;
+        } else if (this == ACK_CALL_RECEIVED) {
             return AckCallReceived.INSTANCE;
         }
-        
+
         try {
             return mClass.newInstance();
         } catch (Exception e) {

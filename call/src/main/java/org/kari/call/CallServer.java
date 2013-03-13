@@ -12,7 +12,7 @@ import org.kari.call.io.IOFactory;
 /**
  * Handles listening client connections
  */
-public final class CallServer extends CallBase 
+public final class CallServer extends CallBase
     implements Runnable
 {
     private static final Logger LOG = Logger.getLogger(CallConstants.BASE_PKG + ".server");
@@ -25,7 +25,11 @@ public final class CallServer extends CallBase
     private final CallInvoker mCallInvoker;
     private ServerSocket mServer;
     private Thread mThread;
-    
+
+
+    private final ConnectionPool mConnectionPool = new ConnectionPool();
+    private final CallExecutor mExecutor = new CallExecutor(this);
+
     /**
      * @param pServerAddress Either actual IP/host or application specific
      * identity for server addresses
@@ -43,16 +47,16 @@ public final class CallServer extends CallBase
             final ServiceRegistry pRegistry,
             final IOFactory pIOFactory,
             final CallServerSocketFactory pSocketFactory,
-            final CallInvoker pCallInvoker) 
+            final CallInvoker pCallInvoker)
     {
         super(pServerAddress, pPort, pRegistry, pIOFactory);
-        
+
         mSocketFactory = pSocketFactory != null
             ? pSocketFactory
             : DefaultCallServerSocketFactory.INSTANCE;
-        
-        mCallInvoker = pCallInvoker != null 
-            ? pCallInvoker 
+
+        mCallInvoker = pCallInvoker != null
+            ? pCallInvoker
             : DefaultCallInvoker.INSTANCE;
     }
 
@@ -67,7 +71,18 @@ public final class CallServer extends CallBase
     public boolean isRunning() {
         return mRunning;
     }
-    
+
+    /**
+     * @return pool of connections for sending results back to client
+     */
+    public ConnectionPool getConnectionPool() {
+        return mConnectionPool;
+    }
+
+    public CallExecutor getExecutor() {
+        return mExecutor;
+    }
+
     public synchronized void kill() {
         mRunning = false;
         mThread.interrupt();
@@ -98,7 +113,7 @@ public final class CallServer extends CallBase
                     // restart server socket
                     closeServerSocket();
                 }
-                
+
                 if (socket != null) {
                     try {
                         createHandler(socket).start();
@@ -119,20 +134,20 @@ public final class CallServer extends CallBase
     public ServerHandler createHandler(Socket pSocket) throws IOException {
         return new ServerHandler(this, pSocket);
     }
-    
-    private synchronized ServerSocket openServerSocket() 
-        throws IOException 
+
+    private synchronized ServerSocket openServerSocket()
+        throws IOException
     {
         if (mServer == null) {
             mServer = mSocketFactory.createSocket(
-                    getServerAddress(),  
+                    getServerAddress(),
                     getPort());
         }
         return mServer;
     }
 
     /**
-     * Closes server socket if it's currently existing. Effectively this allows 
+     * Closes server socket if it's currently existing. Effectively this allows
      * restarting server, without killing it. For example, if server socket
      * is somehow "stuck" due to OS issues, or actual server IP identified
      * by server address has changed.

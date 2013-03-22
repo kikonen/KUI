@@ -28,72 +28,88 @@ public abstract class Handler {
     private static final int BUFFER_SIZE = 8192;
     static final int COMPRESSION_LEVEL = Deflater.DEFAULT_COMPRESSION;
     static final byte MAGIC_VALUE = -2;
-    
+
     protected final Socket mSocket;
-    
+    protected final int mSocketSOTimeout;
+    protected final int mIdleTimeout;
+
     protected final boolean mCounterEnabled;
     protected final CountOutputStream mCountOut;
     protected final CountInputStream mCountIn;
     protected final TransferCounter mCounter;
-    
+
     protected final DataInputStream mIn;
     protected final DataOutputStream mOut;
 
     protected final IOFactory mIOFactory;
-    
+
     private final boolean mReuseObjectStream;
     private final int mCompressThreshold;
     protected final boolean mTraceTrafficStatistics;
 
     private DirectByteArrayOutputStream mByteOut;
     private final DirectByteArrayInputStream mByteIn = new DirectByteArrayInputStream();
-    
+
     private byte[] mBuffer;
-    
+
     private Deflater mDeflater;
     private Inflater mInflater;
 
-    
+
     private ObjectOutputStream mByteObjectOut;
     private ObjectInputStream mByteObjectIn;
-    
+
+    private long mLastAcccessTime;
+
     protected volatile boolean mRunning = true;
 
-    
+
     protected Handler(
             final Socket pSocket,
-            final IOFactory pIOFactory,
-            final boolean pCounterEnabled,
-            final boolean pTraceTrafficStatistics,
-            final boolean pReuseObjectStream,
-            final int pCompressThreshold) 
-        throws IOException 
+            CallBase pCall)
+        throws IOException
     {
         mSocket = pSocket;
-        
-        mCounterEnabled = pCounterEnabled;
-        if (pCounterEnabled) {
+        mIdleTimeout = pCall.getIdleTimeout();
+
+        int timeout = pCall.getCallTimeout();
+        if (timeout > 0) {
+            mSocket.setSoTimeout(timeout);
+        } else {
+            timeout = mSocket.getSoTimeout();
+        }
+        if (mIdleTimeout > 0) {
+            timeout = Math.min(timeout,  mIdleTimeout);
+        }
+        mSocketSOTimeout = timeout;
+
+        if (mSocketSOTimeout > 0) {
+            mSocket.setSoTimeout(mSocketSOTimeout);
+        }
+
+        mCounterEnabled = pCall.isCounterEnabled();
+        if (mCounterEnabled) {
             mCountOut = new CountOutputStream(mSocket.getOutputStream());
             mCountIn = new CountInputStream(mSocket.getInputStream());
             mCounter = TransferCounter.INSTANCE;
-            
+
             mIn = new DataInputStream(new BufferedInputStream(mCountIn));
             mOut = new DataOutputStream(new BufferedOutputStream(mCountOut));
         } else {
             mCountOut = null;
             mCountIn = null;
             mCounter = null;
-            
+
             mIn = new DataInputStream(new BufferedInputStream(mSocket.getInputStream()));
             mOut = new DataOutputStream(new BufferedOutputStream(mSocket.getOutputStream()));
         }
-        
-        mIOFactory = pIOFactory;
-        mTraceTrafficStatistics = pTraceTrafficStatistics;
-        mReuseObjectStream = pReuseObjectStream;
-        mCompressThreshold = pCompressThreshold;
+
+        mIOFactory = pCall.getIOFactory();
+        mTraceTrafficStatistics = pCall.isTraceTrafficStatistics();
+        mReuseObjectStream = pCall.isReuseObjectStream();
+        mCompressThreshold = pCall.getCompressThreshold();
     }
-    
+
     public void kill() {
         mRunning = false;
         CallUtil.closeSocket(mSocket);
@@ -111,11 +127,31 @@ public abstract class Handler {
             mDeflater.end();
         }
     }
-    
+
+
+    /**
+     * Last access time for idle cleanup
+     */
+    public final long getLastAcccessTime() {
+        return mLastAcccessTime;
+    }
+
+    public final void setLastAcccessTime(long pLastAcccessTime) {
+        mLastAcccessTime = pLastAcccessTime;
+    }
+
+    /**
+     * @return true if handler is idling
+     */
+    public boolean isIdling() {
+        long diff = System.currentTimeMillis() - mLastAcccessTime;
+        return diff >= mIdleTimeout;
+    }
+
     public boolean isRunning() {
         return mRunning && !mSocket.isClosed();
     }
-    
+
     public final IOFactory getIOFactory() {
         return mIOFactory;
     }
@@ -133,7 +169,7 @@ public abstract class Handler {
 
     /**
      * Get reused encoding buffer
-     * 
+     *
      * @see #getObjectOut()
      */
     public final DirectByteArrayOutputStream getByteOut() {
@@ -150,7 +186,7 @@ public abstract class Handler {
         if (mByteOut != null) {
             mByteOut.set(BUFFER_SIZE);
         }
-        
+
         if (mByteIn != null) {
             mByteIn.empty();
         }
@@ -158,7 +194,7 @@ public abstract class Handler {
 
     /**
      * Prepare {@link #getByteOut()} for writing pCount data
-     * 
+     *
      * @return direct reference to {@link #getByteOut()} buffer with
      * ensure pCount capasity
      */
@@ -167,7 +203,7 @@ public abstract class Handler {
 
         out.reset();
         out.ensureCapacity(pCount);
-        
+
         return out.getBuffer();
     }
 
@@ -192,16 +228,16 @@ public abstract class Handler {
         if (mInflater == null) {
             mInflater = new Inflater(true);
         }
-        return mInflater; 
+        return mInflater;
     }
 
     /**
      * @return ObjectOutput around {@link #getByteOut()}
      */
     public final ObjectOutputStream createObjectOut()
-        throws IOException 
+        throws IOException
     {
-        return mReuseObjectStream 
+        return mReuseObjectStream
             ? getByteObjectOut()
             : mIOFactory.createObjectOutput(getByteOut());
     }
@@ -209,7 +245,7 @@ public abstract class Handler {
     /**
      * Reused stream bound into {@link #mByteIn}
      */
-    private final ObjectInputStream getByteObjectIn() 
+    private final ObjectInputStream getByteObjectIn()
         throws IOException
     {
         if (mByteObjectIn == null) {
@@ -222,7 +258,7 @@ public abstract class Handler {
      * @return input wrapper around {@link #getByteOut()} buffer
      */
     public final ObjectInputStream createObjectIn(int pSize)
-        throws IOException 
+        throws IOException
     {
         // wrap data in "write" buffer into "read" buffer
         DirectByteArrayInputStream bin = mByteIn;
@@ -237,7 +273,7 @@ public abstract class Handler {
     /**
      * Reused stream bound into {@link #getByteOut()}
      */
-    public final ObjectOutputStream getByteObjectOut() 
+    public final ObjectOutputStream getByteObjectOut()
         throws IOException
     {
         if (mByteObjectOut == null) {
@@ -247,7 +283,7 @@ public abstract class Handler {
     }
 
     public final void finishObjectOut(ObjectOutputStream pOut)
-        throws IOException 
+        throws IOException
     {
         if (mReuseObjectStream) {
             pOut.reset();
@@ -256,9 +292,9 @@ public abstract class Handler {
         }
         pOut.flush();
     }
-    
+
     public final void finishObjectIn(ObjectInputStream pIn)
-        throws IOException 
+        throws IOException
     {
         // consume TC_RESET
         if (mReuseObjectStream) {

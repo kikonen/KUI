@@ -21,45 +21,45 @@ import org.kari.call.event.Call;
  */
 public final class CallHandler implements InvocationHandler {
     private static final int RETRY_COUNT = 2;
-    
+
     private final Class<? extends Remote> mService;
     private final CallClient mClient;
     private final CallSessionProvider mSessionProvider;
-    
+
     private final short mServiceUUID;
-    
+
     /**
      * <p>NOTE KI methodIds can be cached only within this handler; identitymap
      * won't hold across different proxy instances
      */
-    private final IdentityHashMap<Method, Short> mMethodIds = 
+    private final IdentityHashMap<Method, Short> mMethodIds =
             new IdentityHashMap<Method, Short>();
 
     private final TObjectShortMap<Method> mMethods = new TObjectShortHashMap<Method>();
 
-    
+
     public CallHandler(
             Class<? extends Remote> pService,
-            CallClient pClient, 
-            CallSessionProvider pSessionProvider) 
+            CallClient pClient,
+            CallSessionProvider pSessionProvider)
         throws InvalidServiceException
     {
         mService = pService;
         mClient = pClient;
         mSessionProvider = pSessionProvider;
-        
+
         mClient.getRegistry().register(pService);
         mServiceUUID = mClient.getRegistry().getServiceUUID(mService);
     }
-    
-    
+
+
     @Override
     public Object invoke(Object pProxy, Method pMethod, Object[] pArgs)
-        throws Throwable 
+        throws Throwable
     {
         Object result = null;
         String methodName = pMethod.getName();
-        
+
         if ("toString".equals(methodName)) {
             return mService.toString();
         }
@@ -78,35 +78,39 @@ public final class CallHandler implements InvocationHandler {
             try {
                 boolean sessionIdChanged = sessionId != handler.getLastSessionId();
                 handler.setLastSessionId(sessionId);
-                
+
                 Call call = new BufferCall(
                         sessionId,
                         sessionIdChanged,
-                        mServiceUUID, 
-                        getMethodId(mServiceUUID, pMethod), 
+                        mServiceUUID,
+                        getMethodId(mServiceUUID, pMethod),
                         pArgs);
-                
+
                 result = handler.invoke(call);
                 retryCount = RETRY_COUNT;
             } catch (RetryCallException e) {
                 // retry
                 if (retryCount >= RETRY_COUNT) {
-                    throw e;
+                    Throwable cause = e.getCause();
+                    if ( !(cause instanceof RemoteException) ) {
+                        cause = new RemoteException("Connection failed", cause);
+                    }
+                    throw cause;
                 }
-                
+
                 // small delay before retry
-                Thread.sleep(100);
+                Thread.sleep(50);
             } catch (RemoteMethodNotFoundException e) {
                 throw new RemoteException(e.getMessage() + ": " + pMethod);
             } finally {
                 mClient.release(handler);
             }
         }
-        
+
         return result;
     }
-    
-    
+
+
     /**
      * Get/Create methodId in client side
      */
@@ -118,7 +122,7 @@ public final class CallHandler implements InvocationHandler {
                 if (methods == null) {
                     methods = DefaultIdResolver.INSTANCE.resolveMethods(mService);
                 }
-                
+
                 methods.forEachEntry(new TShortObjectProcedure<Method>() {
                     @Override
                     public boolean execute(short pMethodId, Method pMethod) {
@@ -131,7 +135,7 @@ public final class CallHandler implements InvocationHandler {
             mMethodIds.put(pTarget,  new Short(mMethods.get(pTarget)));
             id = mMethodIds.get(pTarget);
         }
-        
+
         return id != null ? id.shortValue() : 0;
     }
 

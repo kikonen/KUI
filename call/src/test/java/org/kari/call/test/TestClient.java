@@ -28,6 +28,8 @@ public final class TestClient {
     public static final boolean COUNTER_ENABLED = true;
     public static final boolean REUSE_STREAM_ENABLED = true;
     public static final int COMPRESS_THRESHOLD = BufferCall.DEFAULT_COMPRESS_THRESHOLD;
+    public static final int SO_TIMEOUT = 60 * 1000;
+    public static final int IDLE_TIMEOUT = 2 * 60 * 1000;
 
     public static final boolean TRACE = true;
     public static final boolean TRACE_TRAFFIC_STATISTICS = true;
@@ -74,6 +76,8 @@ public final class TestClient {
         call.setTraceTrafficStatistics(TRACE_TRAFFIC_STATISTICS);
         call.setReuseObjectStream(REUSE_STREAM_ENABLED);
         call.setCompressThreshold(COMPRESS_THRESHOLD);
+        call.setIdleTimeout(IDLE_TIMEOUT);
+        call.setCallTimeout(SO_TIMEOUT);
 
         final Set<Thread> running = new THashSet<Thread>();
 

@@ -7,8 +7,11 @@ import java.net.Socket;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import org.apache.log4j.Logger;
 import org.kari.call.io.CallClientSocketFactory;
@@ -37,7 +40,7 @@ public final class CallClient extends CallBase {
     private final Set<ClientHandler> mHandlers = new THashSet<ClientHandler>();
     /**
      * Currently available handlers:
-     * 
+     *
      * <p>Map of (sessionId, List of (handler))
      */
     private final IdentityHashMap<Object, List<ClientHandler>> mAvailable =
@@ -52,11 +55,18 @@ public final class CallClient extends CallBase {
     private final List<ClientHandler> mRemovedHandlers = new ArrayList<ClientHandler>();
     private final List<Object> mRemovedSessions = new ArrayList<Object>();
 
+    private Timer mIdleTimer;
+    private final TimerTask mIdleTask = new TimerTask() {
+            @Override
+            public void run() {
+                idleCleanup();
+            }
+        };
 
     /**
      * @param pServerAddress Either actual IP/host or application specific
      * identity for server addresses
-     * 
+     *
      * @param pSocketFactory if null default (plain socket) is used
      * @param pIOFactory if null default is used
      * @param pRegistry If null new registry is created with default resolver
@@ -79,11 +89,28 @@ public final class CallClient extends CallBase {
 
     }
 
+    /**
+     * @param pIdleTimeout idle timeout in millis, 0 <=  for never
+     */
+    @Override
+    public final synchronized void setIdleTimeout(int pIdleTimeout) {
+        super.setIdleTimeout(pIdleTimeout);
+
+        if (mIdleTimer != null) {
+            mIdleTimer.cancel();
+            mIdleTimer = null;
+        }
+
+        if (pIdleTimeout > 0) {
+            mIdleTimer = new Timer("call-cleanup", true);
+            mIdleTimer.schedule(mIdleTask, pIdleTimeout, pIdleTimeout);
+        }
+    }
 
     /**
      * Retrieve handler for pSessionId and cleanup possible dead handlers
      * (socket died, etc.)
-     * 
+     *
      * @return null if not found
      */
     private ClientHandler getBySession(Object pSessionId) {
@@ -123,7 +150,9 @@ public final class CallClient extends CallBase {
             handlers = new ArrayList<ClientHandler>();
             mAvailable.put(sessionId, handlers);
         }
+
         handlers.add(pHandler);
+        pHandler.setLastAcccessTime(System.currentTimeMillis());
     }
 
     private void cleanupBySession() {
@@ -167,13 +196,13 @@ public final class CallClient extends CallBase {
             throw new RemoteException("Failed to connect server", e);
         }
         return handler;
-            }
+    }
 
     /**
      * Get available handler from pool of handlers or create new handler.
      * Reserved handler *MUST* be returned back to pool after use to avoid
      * memory leaks.
-     * 
+     *
      * <p>USAGE: use try-finally
      * <pre>
      * ClientHandler handler = client.reserve();
@@ -183,11 +212,11 @@ public final class CallClient extends CallBase {
      *     client.release(handler);
      * }
      * </pre>
-     * 
+     *
      * @param pSessionId Associated session. Existing handler usinsg pSessionId
      * is preferably get instead of another, to improve "not changed" sessionId
      * logic in call serialization.
-     * 
+     *
      * @throws RemoteException if cannot connect to server
      */
     public synchronized ClientHandler reserve(Object pSessionId) throws RemoteException {
@@ -206,6 +235,8 @@ public final class CallClient extends CallBase {
                 handler = newHandler();
             }
         }
+
+        handler.setLastAcccessTime(System.currentTimeMillis());
 
         return handler;
     }
@@ -238,7 +269,7 @@ public final class CallClient extends CallBase {
      * Close all handlers to enforce restart of connection. Relevant, for
      * example, if server-address is abstraction of actual host IP, and
      * restart of connection is needed after "server URL" change.
-     * 
+     *
      * @param pForceKill if true currently in-use connections are forcefully
      * killed, otherwise those connections are closed softly (i.e. after
      * they are released back to pool). Using force should be avoided, since
@@ -276,6 +307,40 @@ public final class CallClient extends CallBase {
             // calls; kill handlers when they are released
             mPending.addAll(mHandlers);
             mHandlers.clear();
+        }
+    }
+
+
+    /**
+     * Idle cleanup of connections
+     */
+    protected synchronized void idleCleanup() {
+        final long now = System.currentTimeMillis();
+        mRemovedHandlers.clear();
+
+        for (Object sessionId : mAvailable.keySet()) {
+            List<ClientHandler> handlers = mAvailable.get(sessionId);
+            if (!handlers.isEmpty()) {
+                Iterator<ClientHandler> iter = handlers.iterator();
+                while (iter.hasNext()) {
+                    ClientHandler handler = iter.next();
+                    long diff = now - handler.getLastAcccessTime();
+                    if (diff >= getIdleTimeout()) {
+                        handler.kill();
+                        handler.free();
+
+                        iter.remove();
+                        mRemovedHandlers.add(handler);
+                    }
+                }
+            }
+        }
+
+        if (!mRemovedHandlers.isEmpty()) {
+            for (ClientHandler removed : mRemovedHandlers) {
+                release(removed);
+            }
+            mRemovedHandlers.clear();
         }
     }
 }

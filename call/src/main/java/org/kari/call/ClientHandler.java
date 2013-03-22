@@ -3,6 +3,7 @@ package org.kari.call;
 import java.io.EOFException;
 import java.io.IOException;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.rmi.RemoteException;
 
 import org.apache.log4j.Logger;
@@ -25,12 +26,7 @@ public final class ClientHandler extends Handler {
             CallClient pClient)
         throws IOException
     {
-        super(pSocket,
-                pClient.getIOFactory(),
-                pClient.isCounterEnabled(),
-                pClient.isTraceTrafficStatistics(),
-                pClient.isReuseObjectStream(),
-                pClient.getCompressThreshold());
+        super(pSocket, pClient);
     }
 
     /**
@@ -75,10 +71,10 @@ public final class ClientHandler extends Handler {
             pCall.send(this, mOut);
 
             // handle ack
-            Result ack = readResult();
+            Result ack = readResult(false);
             if (ack.getType() == CallType.ACK_CALL_RECEIVED) {
                 acked = true;
-                result = readResult();
+                result = readResult(true);
             } else {
                 // error if not ack
                 ack.getResult();
@@ -115,13 +111,27 @@ public final class ClientHandler extends Handler {
 
     /**
      * Read single result from server
+     *
+     * @param pRetry is retry done on SOtimeout (false for "ack")
      */
-    private Result readResult()
+    private Result readResult(boolean pRetry)
         throws IOException,
             RemoteException,
             Exception
     {
-        int code = mIn.read();
+        int code = -1;
+
+        boolean wait = true;
+        while (wait && isRunning()) {
+            try {
+                code = mIn.read();
+                wait = false;
+            } catch (SocketTimeoutException e) {
+                // ignore & retry
+                wait = pRetry;
+            }
+        }
+
         if (code < 0) {
             // EOF
             throw new EOFException();

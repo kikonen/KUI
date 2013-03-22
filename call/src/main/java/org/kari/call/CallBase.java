@@ -8,7 +8,7 @@ import org.kari.call.io.IOFactory;
  *
  * @see CallClient
  * @see CallServer
- * 
+ *
  * @author kari
  */
 public abstract class CallBase {
@@ -16,61 +16,104 @@ public abstract class CallBase {
     private final int mPort;
     private final IOFactory mIOFactory;
     private final ServiceRegistry mRegistry;
-    
+
     private boolean mCounterEnabled;
     private boolean mTraceTrafficStatistics;
     private boolean mReuseObjectStream;
     private int mCompressThreshold;
-    
+
+    private int mCallTimeout = CallConstants.CALL_TIMEOUT;
+
+    private int mIdleTimeout;
+
     protected volatile boolean mRunning = true;
 
-    
+
     protected CallBase(
-            String pServerAddress, 
-            int pPort, 
+            String pServerAddress,
+            int pPort,
             ServiceRegistry pRegistry,
-            IOFactory pIOFactory) 
+            IOFactory pIOFactory)
     {
         mServerAddress = pServerAddress;
         mPort = pPort;
-        
+
         mRegistry = pRegistry != null
             ? pRegistry
             : new ServiceRegistry(null);
-        
+
         mIOFactory = pIOFactory != null
             ? pIOFactory
             : DefaultIOFactory.INSTANCE;
     }
 
-    public boolean isCounterEnabled() {
+    /**
+     * @return Call SO socket timeout in millis
+     *
+     * @see CallConstants#CALL_TIMEOUT
+     */
+    public final int getCallTimeout() {
+        return mCallTimeout;
+    }
+
+    /**
+     * <p>NOTE KI Since "event" code reading from socket uses retry in SOtimeout
+     * case, extremely large timeouts shouldn't be needed
+     *
+     * @param pCallTimeout If <= 0 then not used but one set by socket factory
+     * is utilized
+     */
+    public final void setCallTimeout(int pCallTimeout) {
+        mCallTimeout = pCallTimeout;
+    }
+
+    /**
+     * Idle cleanup time for connections.
+     *
+     * <p>NOTE KI For {@link ServerHandler} this defines also max SOtimeout,
+     * to allow idle cleanup of server socket
+     *
+     * @return idle timeout in millis, 0 <= for never
+     */
+    public final int getIdleTimeout() {
+        return mIdleTimeout;
+    }
+
+    /**
+     * @param pIdleTimeout idle timeout in millis, 0 <=  for never
+     */
+    public void setIdleTimeout(int pIdleTimeout) {
+        mIdleTimeout = pIdleTimeout;
+    }
+
+    public final boolean isCounterEnabled() {
         return mCounterEnabled;
     }
 
-    public void setCounterEnabled(boolean pCounterEnabled) {
+    public final void setCounterEnabled(boolean pCounterEnabled) {
         mCounterEnabled = pCounterEnabled;
     }
 
-    public boolean isTraceTrafficStatistics() {
+    public final boolean isTraceTrafficStatistics() {
         return mTraceTrafficStatistics;
     }
 
-    public void setTraceTrafficStatistics(boolean pTraceTrafficStatistics) {
+    public final void setTraceTrafficStatistics(boolean pTraceTrafficStatistics) {
         mTraceTrafficStatistics = pTraceTrafficStatistics;
     }
 
-    public boolean isReuseObjectStream() {
+    public final boolean isReuseObjectStream() {
         return mReuseObjectStream;
     }
 
-    public void setReuseObjectStream(boolean pReuseObjectStream) {
+    public final void setReuseObjectStream(boolean pReuseObjectStream) {
         mReuseObjectStream = pReuseObjectStream;
     }
 
     /**
      * @return compress threshold for call (client) or result (server).
      */
-    public int getCompressThreshold() {
+    public final int getCompressThreshold() {
         return mCompressThreshold;
     }
 
@@ -78,7 +121,7 @@ public abstract class CallBase {
      * @param pResultCompressThreshold Threshold in bytes for result compression.
      * Use -1 to use default threshold, 0 for always and Integer.MAX_VALUE for never.
      */
-    public void setCompressThreshold(int pCompressThreshold) {
+    public final void setCompressThreshold(int pCompressThreshold) {
         mCompressThreshold = pCompressThreshold;
         mCompressThreshold = pCompressThreshold < 0
             ? BufferCall.DEFAULT_COMPRESS_THRESHOLD
@@ -93,19 +136,19 @@ public abstract class CallBase {
         mRunning = pRunning;
     }
 
-    public String getServerAddress() {
+    public final String getServerAddress() {
         return mServerAddress;
     }
 
-    public int getPort() {
+    public final int getPort() {
         return mPort;
     }
 
-    public IOFactory getIOFactory() {
+    public final IOFactory getIOFactory() {
         return mIOFactory;
     }
 
-    public ServiceRegistry getRegistry() {
+    public final ServiceRegistry getRegistry() {
         return mRegistry;
     }
 

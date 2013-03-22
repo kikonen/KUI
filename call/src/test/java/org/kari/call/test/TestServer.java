@@ -26,13 +26,15 @@ public final class TestServer {
     private static final boolean TRACE_TRAFFIC_STATISTICS = TestClient.TRACE_TRAFFIC_STATISTICS;
     private static final boolean REUSE_STREAM_ENABLED = TestClient.REUSE_STREAM_ENABLED;
     public static final int COMPRESS_THRESHOLD = TestClient.COMPRESS_THRESHOLD;
-    
+    public static final int SO_TIMEOUT = 30000;
+    public static final int IDLE_TIMEOUT = 60000;
+
     static final int PORT = 8100;
-    
+
     private final CallServerSocketFactory mSocketFactory = new CallServerSocketFactory() {
         @Override
         public ServerSocket createSocket(String pServerAddress, int pPort)
-            throws IOException 
+            throws IOException
         {
             InetAddress address = pServerAddress != null
                 ? InetAddress.getByName(pServerAddress)
@@ -40,15 +42,15 @@ public final class TestServer {
             return new ServerSocket(pPort, 50, address);
         }
     };
-    
+
     private final CallInvoker mInvoker = new CallInvoker() {
         @Override
         public Object invoke(
-                Object pSessionId, 
-                Remote pService, 
+                Object pSessionId,
+                Remote pService,
                 Method pMethod,
-                Object[] pParams) 
-            throws Throwable 
+                Object[] pParams)
+            throws Throwable
         {
             if (TRACE) LOG.info("session: " + pSessionId);
             try {
@@ -58,7 +60,7 @@ public final class TestServer {
             }
         }
     };
-    
+
     public static void main(String[] args) {
         try {
             BasicConfigurator.configure();
@@ -68,25 +70,27 @@ public final class TestServer {
             System.exit(-1);
         }
     }
-    
+
     private void start() throws Exception {
         CallServer call = new CallServer(
-                null, 
-                PORT, 
+                null,
+                PORT,
                 new ServiceRegistry(null),
                 new TestIOFactory(),
-                mSocketFactory, 
+                mSocketFactory,
                 mInvoker);
         call.setCounterEnabled(COUNTER_ENABLED);
         call.setTraceTrafficStatistics(TRACE_TRAFFIC_STATISTICS);
         call.setReuseObjectStream(REUSE_STREAM_ENABLED);
         call.setCompressThreshold(COMPRESS_THRESHOLD);
-        
+        call.setIdleTimeout(IDLE_TIMEOUT);
+        call.setCallTimeout(SO_TIMEOUT);
+
         call.getRegistry().register(new TestServiceImpl());
-    
+
         // not daemon since it it's only thread
         call.start(false);
-        
+
         LOG.info("started server");
     }
 

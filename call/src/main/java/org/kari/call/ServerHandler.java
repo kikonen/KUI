@@ -2,6 +2,7 @@ package org.kari.call;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 
 import org.apache.log4j.Logger;
 import org.kari.call.event.AckCallReceived;
@@ -14,28 +15,23 @@ import org.kari.call.event.Result;
  *
  * @author kari
  */
-public final class ServerHandler extends Handler 
+public final class ServerHandler extends Handler
     implements
         Runnable
 {
     private static final Logger LOG = Logger.getLogger(CallConstants.BASE_PKG + ".server_handler");
     private static final int PROTOCOL_STACK_SKIP = 2;
     private static final int INVOKE_STACK_SKIP = 3;
-    
+
     private final CallServer mServer;
-    
+
     private Thread mThread;
     private Object mLastSessionId;
 
-    
+
     public ServerHandler(CallServer pServer, Socket pSocket) throws IOException {
-        super(pSocket, 
-                pServer.getIOFactory(), 
-                pServer.isCounterEnabled(),
-                pServer.isTraceTrafficStatistics(),
-                pServer.isReuseObjectStream(),
-                pServer.getCompressThreshold());
-    
+        super(pSocket, pServer);
+
         mServer = pServer;
     }
 
@@ -45,17 +41,23 @@ public final class ServerHandler extends Handler
     public void start() {
         if (isRunning()) {
             synchronized (this) {
-                mThread = new Thread(this, "Handler-" + mSocket.getRemoteSocketAddress()+ "-" + mSocket.getLocalPort());
+                String addr = mSocket.getRemoteSocketAddress().toString();
+                if (addr.startsWith("/")) {
+                    addr = addr.substring(1);
+                }
+                mThread = new Thread(
+                        this,
+                        "Call:" + mSocket.getLocalPort() + "-" + addr);
                 mThread.setDaemon(true);
                 mThread.start();
             }
         }
     }
-    
+
     @Override
     public void kill() {
         super.kill();
-        
+
         synchronized (this) {
             Thread thread = mThread;
             mThread = null;
@@ -73,8 +75,10 @@ public final class ServerHandler extends Handler
     @Override
     public void run() {
         final boolean TRACE = mTraceTrafficStatistics;
-        boolean waiting = true;
+        boolean wait = true;
         try {
+            setLastAcccessTime(System.currentTimeMillis());
+
             while (isRunning()) {
                 if (mCounterEnabled) {
                     mCountOut.markCount();
@@ -84,10 +88,19 @@ public final class ServerHandler extends Handler
                 boolean success = false;
                 try {
                     success = false;
-                    waiting = true;
-                    int code = mIn.read();
-                    waiting = false;
-                    
+
+                    int code = -1;
+                    wait = true;
+                    while (wait && !isIdling() && isRunning()) {
+                        try {
+                            code = mIn.read();
+                            wait = false;
+                        } catch (SocketTimeoutException e) {
+                            // ignore & retry
+                            int x = 0;
+                        }
+                    }
+
                     if (code < 0) {
                         // EOF
                         mRunning = false;
@@ -104,10 +117,12 @@ public final class ServerHandler extends Handler
                         if (TRACE) LOG.info("out=" + mCountOut.getMarkSize() + ", in=" + mCountIn.getMarkSize());
                         mCounter.add(mCountOut.getMarkSize(), mCountIn.getMarkSize());
                     }
+
+                    setLastAcccessTime(System.currentTimeMillis());
                 }
             }
         } catch (Exception e) {
-            if (!waiting) {
+            if (!wait) {
                 LOG.error("handler failed", e);
             }
         } finally {
@@ -135,7 +150,7 @@ public final class ServerHandler extends Handler
             // protocol
             suicide = true;
         }
-        
+
         if (call != null) {
             boolean received = false;
             boolean acked = false;
@@ -164,7 +179,7 @@ public final class ServerHandler extends Handler
                     suicide = true;
                 }
             }
-            
+
             if (acked) {
                 try {
                     // execute after sending ack
@@ -177,7 +192,7 @@ public final class ServerHandler extends Handler
                 }
             }
         }
-        
+
         try {
             result.send(this, mOut);
         } catch (Exception e) {
@@ -197,5 +212,5 @@ public final class ServerHandler extends Handler
             }
         }
     }
-    
+
 }

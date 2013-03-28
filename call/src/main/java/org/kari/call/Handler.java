@@ -184,7 +184,8 @@ public abstract class Handler {
      */
     public final void resetByteOut() {
         if (mByteOut != null) {
-            mByteOut.set(BUFFER_SIZE);
+            // NOTE KI reset to 0 avoid keeping one buffer from pool reserved
+            mByteOut.set(0);
         }
 
         if (mByteIn != null) {
@@ -255,7 +256,8 @@ public abstract class Handler {
     }
 
     /**
-     * @return input wrapper around {@link #getByteOut()} buffer
+     * @return input wrapper around current contents of
+     * {@link #getByteOut()} buffer
      */
     public final ObjectInputStream createObjectIn(int pSize)
         throws IOException

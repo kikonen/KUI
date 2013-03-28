@@ -70,6 +70,9 @@ public final class ClientHandler extends Handler {
             resetByteOut();
             pCall.send(this, mOut);
 
+            // Avoid keeping (possibly large) buffer reserved
+            resetByteOut();
+
             // handle ack
             Result ack = readResult(false);
             if (ack.getType() == CallType.ACK_CALL_RECEIVED) {

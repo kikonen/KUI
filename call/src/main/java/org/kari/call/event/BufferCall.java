@@ -95,9 +95,7 @@ public final class BufferCall extends ServiceCall {
             totalCount = bout.size();
         }
 
-        final boolean compressed = totalCount > pHandler.getCompressThreshold();
-
-        pOut.writeBoolean(compressed);
+        boolean compressed = totalCount > pHandler.getCompressThreshold();
 
         if (compressed) {
             byte[] out = BufferPool.INSTANCE.allocate(totalCount);
@@ -123,12 +121,20 @@ public final class BufferCall extends ServiceCall {
                 }
                 deflater.reset();
 
-                CallUtil.writeCompactInt(pOut, compressTotal);
-                pOut.write(out, 0, compressTotal);
+                compressed = compressTotal < totalCount * 0.95;
+                if (compressed) {
+                    pOut.writeBoolean(true);
+                    CallUtil.writeCompactInt(pOut, compressTotal);
+                    CallUtil.writeCompactInt(pOut, totalCount);
+                    pOut.write(out, 0, compressTotal);
+                }
             } finally {
                 BufferPool.INSTANCE.release(out);
             }
-        } else {
+        }
+
+        if (!compressed) {
+            pOut.writeBoolean(false);
             if (pHandler.isReuseObjectStream()) {
                 CallUtil.writeCompactInt(pOut, totalCount);
             }
@@ -150,8 +156,8 @@ public final class BufferCall extends ServiceCall {
 
 
         if (compressed) {
-            int totalCount = 0;
             final int compressCount = CallUtil.readCompactInt(pIn);
+            final int totalCount = CallUtil.readCompactInt(pIn);
 
             byte[] data = BufferPool.INSTANCE.allocate(compressCount);
             final DirectByteArrayOutputStream out = pHandler.getByteOut();
@@ -181,14 +187,13 @@ public final class BufferCall extends ServiceCall {
 
                     inflater.setInput(data, 0, compressCount);
                     out.reset();
-                    out.ensureCapacity((int)(compressCount * ASSUMED_COMPRESS_RATIO));
+                    out.ensureCapacity(totalCount);
 
                     while (!inflater.finished()) {
                         try {
                             int count = inflater.inflate(buffer, 0, buffer.length);
                             if (count > 0) {
                                 out.write(buffer, 0, count);
-                                totalCount += count;
                             }
                         } catch (DataFormatException e) {
                             throw new IOException(e);

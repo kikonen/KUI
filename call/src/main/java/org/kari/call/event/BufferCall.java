@@ -99,7 +99,7 @@ public final class BufferCall extends ServiceCall {
 
         if (compressed) {
             final BufferPool pool = pHandler.getBufferPool();
-            byte[] out = pool.allocate(totalCount);
+            byte[] out = pool.allocate(totalCount / 2);
             try {
                 final Deflater deflater = pHandler.getDeflater();
 
@@ -109,15 +109,12 @@ public final class BufferCall extends ServiceCall {
                 int compressTotal = 0;
                 int offset = 0;
                 while (!deflater.finished()) {
-                    // grow may occur only if compression ration is really bad
-                    if (offset + Handler.BUFFER_SIZE > out.length) {
-                        out = pool.grow(out, out.length + Handler.BUFFER_SIZE);
-                    }
-
                     int count = deflater.deflate(out, offset, out.length - offset);
                     if (count > 0) {
                         compressTotal += count;
                         offset += count;
+                    } else {
+                        out = pool.grow(out, out.length + 1);
                     }
                 }
                 deflater.reset();

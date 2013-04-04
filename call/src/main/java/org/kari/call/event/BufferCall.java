@@ -98,7 +98,8 @@ public final class BufferCall extends ServiceCall {
         boolean compressed = totalCount > pHandler.getCompressThreshold();
 
         if (compressed) {
-            byte[] out = BufferPool.INSTANCE.allocate(totalCount);
+            final BufferPool pool = pHandler.getBufferPool();
+            byte[] out = pool.allocate(totalCount);
             try {
                 final Deflater deflater = pHandler.getDeflater();
 
@@ -109,8 +110,8 @@ public final class BufferCall extends ServiceCall {
                 int offset = 0;
                 while (!deflater.finished()) {
                     // grow may occur only if compression ration is really bad
-                    if (offset + BufferPool.BLOCK_SIZE > out.length) {
-                        out = BufferPool.INSTANCE.grow(out, out.length + BufferPool.BLOCK_SIZE);
+                    if (offset + Handler.BUFFER_SIZE > out.length) {
+                        out = pool.grow(out, out.length + Handler.BUFFER_SIZE);
                     }
 
                     int count = deflater.deflate(out, offset, out.length - offset);
@@ -129,7 +130,7 @@ public final class BufferCall extends ServiceCall {
                     pOut.write(out, 0, compressTotal);
                 }
             } finally {
-                BufferPool.INSTANCE.release(out);
+                pool.release(out);
             }
         }
 
@@ -156,10 +157,11 @@ public final class BufferCall extends ServiceCall {
 
 
         if (compressed) {
+            final BufferPool pool = pHandler.getBufferPool();
             final int compressCount = CallUtil.readCompactInt(pIn);
             final int totalCount = CallUtil.readCompactInt(pIn);
 
-            byte[] data = BufferPool.INSTANCE.allocate(compressCount);
+            byte[] data = pool.allocate(compressCount);
             final DirectByteArrayOutputStream out = pHandler.getByteOut();
             try {
                 // read stream into "data"
@@ -202,7 +204,7 @@ public final class BufferCall extends ServiceCall {
                     inflater.reset();
                 }
             } finally {
-                BufferPool.INSTANCE.release(data);
+                pool.release(data);
             }
             result = pHandler.createObjectIn(out.size());
         } else {

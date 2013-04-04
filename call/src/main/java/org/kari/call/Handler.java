@@ -12,6 +12,7 @@ import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 
 import org.apache.log4j.Logger;
+import org.kari.call.io.BufferPool;
 import org.kari.call.io.CountInputStream;
 import org.kari.call.io.CountOutputStream;
 import org.kari.call.io.DirectByteArrayInputStream;
@@ -25,7 +26,7 @@ import org.kari.call.io.IOFactory;
  */
 public abstract class Handler {
     private static final Logger LOG = Logger.getLogger(CallConstants.BASE_PKG + ".handler");
-    private static final int BUFFER_SIZE = 8192;
+    public static final int BUFFER_SIZE = 8192;
     static final int COMPRESSION_LEVEL = Deflater.DEFAULT_COMPRESSION;
     static final byte MAGIC_VALUE = -2;
 
@@ -37,6 +38,8 @@ public abstract class Handler {
     protected final CountOutputStream mCountOut;
     protected final CountInputStream mCountIn;
     protected final TransferCounter mCounter;
+
+    protected final BufferPool mBufferPool;
 
     protected final DataInputStream mIn;
     protected final DataOutputStream mOut;
@@ -108,6 +111,12 @@ public abstract class Handler {
         mTraceTrafficStatistics = pCall.isTraceTrafficStatistics();
         mReuseObjectStream = pCall.isReuseObjectStream();
         mCompressThreshold = pCall.getCompressThreshold();
+
+        BufferPool pool = pCall.getBufferPool();
+        if (pool == null) {
+            pool = BufferPool.getInstance();
+        }
+        mBufferPool = pool;
     }
 
     public void kill() {
@@ -167,6 +176,10 @@ public abstract class Handler {
         return mCompressThreshold;
     }
 
+    public final BufferPool getBufferPool() {
+        return mBufferPool;
+    }
+
     /**
      * Get reused encoding buffer
      *
@@ -174,7 +187,7 @@ public abstract class Handler {
      */
     public final DirectByteArrayOutputStream getByteOut() {
         if (mByteOut == null) {
-            mByteOut = new DirectByteArrayOutputStream(BUFFER_SIZE);
+            mByteOut = new DirectByteArrayOutputStream(mBufferPool);
         }
         return mByteOut;
     }

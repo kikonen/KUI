@@ -1,6 +1,7 @@
 package org.kari.call;
 
 import org.kari.call.event.BufferCall;
+import org.kari.call.io.BufferPool;
 import org.kari.call.io.IOFactory;
 
 /**
@@ -21,6 +22,8 @@ public abstract class CallBase {
     private boolean mTraceTrafficStatistics;
     private boolean mReuseObjectStream;
     private int mCompressThreshold;
+
+    private BufferPool mBufferPool;
 
     private int mCallTimeout = CallConstants.CALL_TIMEOUT;
 
@@ -126,6 +129,22 @@ public abstract class CallBase {
         mCompressThreshold = pCompressThreshold < 0
             ? BufferCall.DEFAULT_COMPRESS_THRESHOLD
             : pCompressThreshold;
+    }
+
+    /**
+     * @return null for default
+     */
+    public BufferPool getBufferPool() {
+        return mBufferPool;
+    }
+
+    /**
+     * Set buffer pool used for call API
+     *
+     * @param pBufferPool null for default
+     */
+    public void setBufferPool(BufferPool pBufferPool) {
+        mBufferPool = pBufferPool;
     }
 
     public boolean isRunning() {

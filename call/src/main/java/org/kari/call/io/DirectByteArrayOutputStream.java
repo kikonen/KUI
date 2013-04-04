@@ -4,43 +4,54 @@ import java.io.ByteArrayOutputStream;
 
 /**
  * Direct byte array output stream
- * 
+ *
  * <p>NOTE KI Several methods overridden to avoid synchronized
  * <p>NOTE KI Uses internally BufferPool for memory allocation to reduce gc()
- * 
+ *
  * @author kari
  */
 public final class DirectByteArrayOutputStream
     extends ByteArrayOutputStream
 {
+    private final BufferPool mPool;
+
     public DirectByteArrayOutputStream() {
-        this(1024);
+        this(BufferPool.getInstance(), 1024);
     }
 
     public DirectByteArrayOutputStream(int pSize) {
+        this(BufferPool.getInstance(), pSize);
+    }
+
+    public DirectByteArrayOutputStream(BufferPool pPool) {
+        this(pPool, 1024);
+    }
+
+    public DirectByteArrayOutputStream(BufferPool pPool, int pSize) {
         super(0);
-        buf = BufferPool.INSTANCE.allocate(pSize);
+        mPool = pPool;
+        buf = mPool.allocate(pSize);
     }
 
     /**
      * Direct reference to buffer. Allows optimal non-copy access to data
      * and reusing buffer (with reset())
-     * 
+     *
      * @see #size()
      * @see #reset()
      */
     public byte[] getBuffer() {
         return buf;
     }
-    
+
     /**
      * Reset internal buffer into buffer of size pSize (or minimal pooled
      * size, which is at least pSize)
      */
     public void set(int pSize) {
-        buf = BufferPool.INSTANCE.change(buf, pSize);
+        buf = mPool.change(buf, pSize);
     }
-    
+
     public void ensureCapacity(int minCapacity) {
         // overflow-conscious code
         if (minCapacity - buf.length > 0)
@@ -63,11 +74,11 @@ public final class DirectByteArrayOutputStream
             }
             newCapacity = Integer.MAX_VALUE;
         }
-        
-        byte[] newBuffer = BufferPool.INSTANCE.allocate(newCapacity);
+
+        byte[] newBuffer = mPool.allocate(newCapacity);
         // copy only existing data
         System.arraycopy(buf, 0, newBuffer, 0, count);
-        BufferPool.INSTANCE.release(buf);
+        mPool.release(buf);
         buf = newBuffer;
     }
 

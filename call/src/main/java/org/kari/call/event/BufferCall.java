@@ -114,7 +114,9 @@ public final class BufferCall extends ServiceCall {
                         compressTotal += count;
                         offset += count;
                     } else {
-                        out = pool.grow(out, out.length + 1);
+                        if (!deflater.finished()) {
+                            out = pool.grow(out, out.length + 1);
+                        }
                     }
                 }
                 deflater.reset();

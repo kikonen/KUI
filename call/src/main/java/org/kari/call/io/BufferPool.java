@@ -86,23 +86,37 @@ public class BufferPool {
 
     static {
         if (false) {
+            int total;
+
+            total = 0;
             for (int i = 0; i <= MAX_SLOT_SIZE; i++) {
                 int v = MAX_SLOT_SIZE + 2 - i;
                 int maxCount = (int)(Math.log(v)/Math.log10(v) * v);
-                LOG.info("A: " + i +  "=> " + maxCount);
+                int size = getInstance().calculateSize(i);
+                LOG.info("A: " + i +  "=> " + maxCount + ", size=" + size + ", total=" + (size * maxCount));
+                total += size * maxCount;
             }
+            LOG.info("A: totalSize=" + total);
 
+            total = 0;
             for (int i = 0; i <= MAX_SLOT_SIZE; i++) {
                 int v = MAX_SLOT_SIZE + 3 - i;
                 int maxCount = (int)(Math.log10(v) * v);
-                LOG.info("B: " + i +  "=> " + maxCount);
+                int size = getInstance().calculateSize(i);
+                LOG.info("B: " + i +  "=> " + maxCount + ", size=" + size + ", total=" + (size * maxCount));
+                total += size * maxCount;
             }
+            LOG.info("B: totalSize=" + total);
 
+            total = 0;
             for (int i = 0; i <= MAX_SLOT_SIZE; i++) {
                 int v = MAX_SLOT_SIZE + 2 - i;
                 int maxCount = (int)(Math.log(v) * v);
-                LOG.info("C: " + i +  "=> " + maxCount);
+                int size = getInstance().calculateSize(i);
+                LOG.info("C: " + i +  "=> " + maxCount + ", size=" + size + ", total=" + (size * maxCount));
+                total += size * maxCount;
             }
+            LOG.info("C: totalSize=" + total);
         }
     }
 
@@ -190,7 +204,7 @@ public class BufferPool {
      */
     protected int calculateMaxCount(int pSlot, int pSize) {
         int v = mMaxSlotSize + 3 - pSlot;
-        int maxCount = (int)(Math.log10(v) * v);
+        int maxCount = (int)(Math.log(v) * v);
         if (maxCount <= 0) {
             maxCount = 1;
         }
